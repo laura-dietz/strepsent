@@ -40,6 +40,13 @@
         </dependency>
 
         <dependency>
+            <groupId>edu.umass.ciir</groupId>
+            <artifactId>strepsitools</artifactId>
+            <version>s${scala.version}-1.0.1-SNAPSHOT</version>
+        </dependency>
+
+
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>3.8.2</version>
