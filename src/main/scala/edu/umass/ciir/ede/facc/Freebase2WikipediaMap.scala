@@ -34,7 +34,7 @@ object Freebase2WikipediaMap {
 
 }
 
-object FreebaseTest extends App {
+object FreebaseConverter extends App {
 
   val pw = new PrintWriter("./data/freebase-wiki-titles-new-clean")
   val f = io.Source.fromFile("./data/freebase-wiki-titles-new")

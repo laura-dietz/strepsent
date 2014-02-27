@@ -15,13 +15,16 @@ object FaccAnnotationsFromDocument {
     links.map(_.text)
   }
 
-  def extractFaccAnnotations(metadata:Map[String,String], documentname:String) = {
+  def extractFaccAnnotations(metadata:Map[String,String], documentname:String):Seq[FreebaseEntityAnnotation] = {
     val rawAnnotations = metadata.get("raw-annotations")
-    rawAnnotations.map( rawAnnotations => {
-    val lines = rawAnnotations.split("\\n")
-    val annotations = FreebaseAnnotationReader.annotationsFromStrings(lines.iterator).get(documentname).getOrElse(Seq())
-    annotations
-    })
+    rawAnnotations match {
+      case Some(ann) => {
+        val lines = ann.split("\\n")
+        val annotations = FreebaseAnnotationReader.annotationsFromStrings(lines.iterator).get(documentname).getOrElse(Seq())
+        annotations
+      }
+      case None => Seq.empty
+    }
   }
 
   def isWikiDoc(docId:String):Boolean = {

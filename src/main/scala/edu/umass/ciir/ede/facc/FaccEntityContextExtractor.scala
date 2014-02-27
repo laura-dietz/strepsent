@@ -19,8 +19,8 @@ object FaccEntityContextExtractor {
                            , tokenizeText:(String) => Seq[String]): Seq[(FreebaseEntityAnnotation,  Seq[String], Seq[FreebaseEntityAnnotation])] = {
     val halfWindowSize = Math.rint(termWindowSize / 2).toInt
 
-    FaccAnnotationsFromDocument.extractFaccAnnotations(metadata,documentName)
-      .map(faccAnnotations  => {
+    val faccAnnotations = FaccAnnotationsFromDocument.extractFaccAnnotations(metadata,documentName)
+
 
 
       /* Splits the raw text according to surface forms of annotations (in order of annotations)
@@ -58,7 +58,6 @@ object FaccEntityContextExtractor {
       }
   
       result
-      }).getOrElse(Seq.empty)
   }
 
 
