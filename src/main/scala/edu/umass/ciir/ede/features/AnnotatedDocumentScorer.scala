@@ -20,7 +20,8 @@ class AnnotatedDocumentScorer(wikipediaCategoryCountsPath:String, wikipediaTypeC
 
   def scoreDocumentQlIdentifiers(queryIdentifiers: Seq[(String, Double)], annotations : Map[String, AnnotatedDocument],
                                  workingSet: Set[String], nilThreshold: Double = 0.5,
-                                 collectionIdCount:Long, entityIdCounts: Map[String, (Long, Long)]) : Seq[ScoredDocument] = {
+                                 collectionIdCount:Long, entityIdCounts: (String) => (Long,
+    Long)) : Seq[ScoredDocument] = {
 
     val bgScore = computeBgScore(queryIdentifiers, collectionIdCount,entityIdCounts)
     val scoredDocs = for (doc <- workingSet) yield {

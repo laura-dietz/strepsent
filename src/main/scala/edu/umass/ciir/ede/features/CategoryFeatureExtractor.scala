@@ -110,49 +110,6 @@ object CategoryFeatureExtractor {
     categoriesAndTypes
   }
 
-//  def extractEntityAndTextFeatures(rawTextQuery: String, annotations: Map[String, AnnotatedDocument],
-//                                   documents: Seq[ScoredDocument], nilThreshold: Double = 0.5,
-//                                   categoryAndTypeCounts: Map[String, (Set[String], Set[String])],
-//                                   numFeedbackTerms: Int = 25, fb: FeedbackParams) = {
-//
-//    val filteredSd = documents.filter(sd => annotations.contains(sd.documentName)) take fb.numFeedbackDocs
-//
-//    if(filteredSd.isEmpty){
-//      Map("categories" -> Seq.empty, "types" -> Seq.empty)
-//    } else {
-//      val docFeatureMap = extractCategories(annotations, filteredSd, categoryAndTypeCounts, fb)
-//
-//      val docProbs = LogTools.logExpSumNormalize[ScoredDocument](filteredSd, _.score).map(e => e._1.documentName -> e._2).toMap
-//
-//      val categoryDocMap = docFeatureMap.map(r => r._1 -> r._2._1).toMap
-//      val categoryDistribution = ExpansionModels.relevanceModel(filteredSd.map(_.documentName), docProbs, categoryDocMap)
-//
-//      val typeDocMap = docFeatureMap.map(r => r._1 -> r._2._2).toMap
-//      val typeDistribution = ExpansionModels.relevanceModel(filteredSd.map(_.documentName), docProbs, typeDocMap)
-//      val filteredTypes = typeDistribution.filterNot(t => stopTypes.contains(t._1))
-//
-//      val featureMap = Map("categories" -> categoryDistribution, "types" -> filteredTypes)
-//      featureMap
-//    }
-//  }
-//
-//  def extractCategories(annotations: Map[String, AnnotatedDocument], documents: Seq[ScoredDocument],
-//                        categoryAndTypeCounts: Map[String, (Set[String], Set[String])],
-//                        fb: FeedbackParams): Seq[(String, (Seq[String], Seq[String]))] = {
-//
-//    val docsToTypes = new ListBuffer[(String, (Seq[String], Seq[String]))]()
-//    for (doc <- documents) yield {
-//      val docAnnotationOption = annotations.get(doc.documentName)
-//      val types = if (docAnnotationOption == None) {
-//        (Seq[String](), Seq[String]())
-//      } else {
-//        val typesAndCats = extractCategoriesAndTypes(docAnnotationOption.get, 0.5, categoryAndTypeCounts)
-//        typesAndCats
-//      }
-//      docsToTypes += doc.documentName -> types
-//    }
-//    return docsToTypes
-//  }
 
 
   def extractCategoriesAndTypes(annotations: AnnotatedDocument, nilthreshold: Double = 0.5, typesAndCategories: Map[String, (Set[String], Set[String])]): (Seq[String], Seq[String]) = {
