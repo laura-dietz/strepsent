@@ -4,6 +4,7 @@ import scala.xml.XML
 import edu.umass.ciir.ede.facc.{Freebase2WikipediaMap, FreebaseEntityAnnotation}
 import scala.collection.mutable.ListBuffer
 import edu.umass.ciir.ede.facc.FreebaseEntityAnnotation
+import scala.collection.mutable
 
 /**
  * Read post-level entity annotations from IBM-annotated Bolt threats
@@ -20,7 +21,10 @@ class BoltAnnotationsFromDocument(tacId2WikiTitleMap:Map[String,String]) {
   //
   private def attr(n:scala.xml.Node, attrStr:String):String = (n \ attrStr).text
 
-  def extractFaccAnnotations(documentName: String, boltDoc:String) = {
+  def extractFaccAnnotations(documentName: String, boltDoc:String):ListBuffer[FreebaseEntityAnnotation] = {
+    extractFaccAnnotationsSent(documentName, boltDoc).map(_._1)
+  }
+  def extractFaccAnnotationsSent(documentName: String, boltDoc:String):ListBuffer[(FreebaseEntityAnnotation,Int)] = {
     val postId = documentName.substring(documentName.lastIndexOf("_p")+1)
     val bodyXml = XML.loadString(boltDoc)
 
@@ -41,12 +45,16 @@ class BoltAnnotationsFromDocument(tacId2WikiTitleMap:Map[String,String]) {
 
     var startChar = Int.MaxValue
     var endChar = Int.MinValue
+    val startChar2Sent = new mutable.HashMap[Int, Int]()
+
     for(sent <- bodyXml \\ "sent"; if attr(sent,"@sid").toInt >= startSentId && attr(sent,"@sid").toInt <= endSentId){
+      val sentId = attr(sent,"@sid").toInt
       for(tok <- sent \\"token"){
         val thisStartChar = attr(tok, "@begin").toInt
         val thisEndChar = attr(tok, "@end").toInt
         startChar = math.min(startChar, thisStartChar)
         endChar = math.max(endChar, thisEndChar)
+        startChar2Sent += thisStartChar -> sentId
       }
     }
 
@@ -54,18 +62,21 @@ class BoltAnnotationsFromDocument(tacId2WikiTitleMap:Map[String,String]) {
       startChar <= spanBeginChar && spanEndChar <= endChar
     }
 
-    val mentions = new scala.collection.mutable.HashMap[String, String]()
+    val mentions = new scala.collection.mutable.HashMap[String, (String, Int)]()
     for(mention <- bodyXml \\ "mention"; if inCharSpan(attr(mention,"@begin").toInt, attr(mention,"@end").toInt)){
-      mentions += attr(mention,"@mid") -> mention.text
+      val startChar = attr(mention, "@begin").toInt
+      val mid = attr(mention, "@mid")
+      val sentId = startChar2Sent.getOrElse(startChar, {throw new RuntimeException("could not find sentence Id starting with "+startChar+ " in mapping "+startChar2Sent)})
+      mentions += mid -> (mention.text, sentId)
     }
 
 
-    val annotations = new ListBuffer[FreebaseEntityAnnotation]()
+    val annotations = new ListBuffer[(FreebaseEntityAnnotation, Int)]()
 
     for(entity <- bodyXml \\ "entity"; if attr(entity, "@eid").startsWith("kb:")){
       for(mentref <- entity \\ "mentref"; if mentions.contains(attr(mentref,"@mid"))){
         // use this mention and this enitity
-        val mentionText = mentions(attr(mentref,"@mid"))
+        val (mentionText, mentionSentId) = mentions(attr(mentref,"@mid"))
         val tacId = attr(entity,"@eid").substring("kb:".length)
         val wikititleOpt= tacId2WikiTitleMap.get(tacId)
 
@@ -78,7 +89,7 @@ class BoltAnnotationsFromDocument(tacId2WikiTitleMap:Map[String,String]) {
                 val entityScore = attr(entity, "@score").toDouble
 
                 val ann = FreebaseEntityAnnotation(documentName, "UTF-8", mentionText, -1,-1,entityScore, entityScore, freebaseId)
-                annotations += ann
+                annotations += ann -> mentionSentId
               }
               case _ => {}
             }
