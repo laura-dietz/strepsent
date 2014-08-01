@@ -1,13 +1,9 @@
 package edu.umass.ciir.kbbridge.kb2text
 
-import scala.xml.Node
-import scala.xml.NodeSeq
-import scala.xml.XML
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.collection.immutable.HashMap
-import edu.umass.ciir.kbbridge.data.ScoredWikipediaEntity
-import java.util
-import scala.util
+import scala.xml.{Node, NodeSeq, XML}
+import scala.collection.JavaConversions._
 
 /**
  * Takes the input from the XML data and extractions the links from it.
@@ -18,7 +14,8 @@ object WikiLinkExtractor {
 
 
   def extractLinkDestinations(documentName:String, documentMeta:java.util.Map[String,String]): java.util.List[String] = {
-    new util.ArrayList[String](extractLinks(documentName, null, null, documentMeta).map(_.destination))
+    val meta: Map[String, String] = scala.collection.JavaConversions.mapAsScalaMap(documentMeta).toMap
+    new java.util.ArrayList[String](extractLinks(documentName, null, null, meta).map(_.destination))
   }
 
   def extractLinks(documentName:String, documentText:String, documentTerms:Seq[String],documentMeta:Map[String,String]): Seq[Anchor] = {
