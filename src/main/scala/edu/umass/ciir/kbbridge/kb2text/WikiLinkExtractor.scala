@@ -13,10 +13,6 @@ object WikiLinkExtractor {
   case class Anchor(source: String, destination: String, anchorText: String, paragraphId: Int, rawAnchorText: String);
 
 
-  def extractLinkDestinations(documentName:String, documentMeta:java.util.Map[String,String]): java.util.List[String] = {
-    val meta: Map[String, String] = scala.collection.JavaConversions.mapAsScalaMap(documentMeta).toMap
-    new java.util.ArrayList[String](extractLinks(documentName, null, null, meta).map(_.destination))
-  }
 
   def extractLinks(documentName:String, documentText:String, documentTerms:Seq[String],documentMeta:Map[String,String]): Seq[Anchor] = {
 
@@ -102,7 +98,6 @@ object WikiLinkExtractor {
     new Anchor(src, destinationTitle, anchorText.replaceAll(",", "_"), paragraphIdx, rawAnchorText = anchorText)
   }
 
-
 //  def main(args: Array[String]) {
 //
 //    val metadata = new HashMap[String, String];
@@ -118,3 +113,11 @@ object WikiLinkExtractor {
 //  }
 
 }
+
+class JWikiLinkExtractor {
+  def extractLinkDestinations(documentName:String, documentMeta:java.util.Map[String,String]): java.util.List[String] = {
+    val meta: Map[String, String] = scala.collection.JavaConversions.mapAsScalaMap(documentMeta).toMap
+    new java.util.ArrayList[String](WikiLinkExtractor.extractLinks(documentName, null, null, meta).map(_.destination))
+  }
+}
+
