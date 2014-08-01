@@ -6,6 +6,8 @@ import scala.xml.XML
 import scala.collection.mutable.ListBuffer
 import scala.collection.immutable.HashMap
 import edu.umass.ciir.kbbridge.data.ScoredWikipediaEntity
+import java.util
+import scala.util
 
 /**
  * Takes the input from the XML data and extractions the links from it.
@@ -13,6 +15,11 @@ import edu.umass.ciir.kbbridge.data.ScoredWikipediaEntity
 object WikiLinkExtractor {
 
   case class Anchor(source: String, destination: String, anchorText: String, paragraphId: Int, rawAnchorText: String);
+
+
+  def extractLinkDestinations(documentName:String, documentMeta:java.util.Map[String,String]): java.util.List[String] = {
+    new util.ArrayList[String](extractLinks(documentName, null, null, documentMeta).map(_.destination))
+  }
 
   def extractLinks(documentName:String, documentText:String, documentTerms:Seq[String],documentMeta:Map[String,String]): Seq[Anchor] = {
 
