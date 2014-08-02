@@ -1,4 +1,4 @@
-package edu.umass.ciir.kbbridge.kb2text
+package edu.umass.ciir.wikiindex
 
 import edu.umass.ciir.kbbridge.data.EntityRepr
 import edu.umass.ciir.strepsi.galagocompat.GalagoTag

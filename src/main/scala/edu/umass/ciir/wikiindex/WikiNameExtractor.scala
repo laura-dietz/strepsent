@@ -1,5 +1,4 @@
-package edu.umass.ciir.kbbridge.kb2text
-
+package edu.umass.ciir.wikiindex
 
 import edu.umass.ciir.strepsi.galagocompat.GalagoTag
 import edu.umass.ciir.strepsi.{SeqTools, TextNormalizer}

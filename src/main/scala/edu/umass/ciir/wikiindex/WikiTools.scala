@@ -1,4 +1,4 @@
-package edu.umass.ciir.kbbridge.kb2text
+package edu.umass.ciir.wikiindex
 
 import edu.umass.ciir.strepsi.StringTools
 

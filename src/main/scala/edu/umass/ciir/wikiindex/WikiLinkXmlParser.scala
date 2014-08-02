@@ -1,4 +1,4 @@
-package edu.umass.ciir.kbbridge.kb2text
+package edu.umass.ciir.wikiindex
 
 import scala.collection.mutable.ListBuffer
 import scala.xml.{Node, NodeSeq, XML}
