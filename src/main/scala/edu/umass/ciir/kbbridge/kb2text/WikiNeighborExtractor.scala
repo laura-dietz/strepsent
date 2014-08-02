@@ -5,22 +5,35 @@ import edu.umass.ciir.strepsi.StringTools
 import scala.collection.JavaConversions._
 
 /**
- * User: dietz
- * Date: 6/12/13
- * Time: 6:48 PM
+ * Extracts neighbors on the Wikipedia graph from the entity's document. In particular, gets inlinks and context links from
+ * the metadata field and outlinks by parsing the &lt;link&gt; fields of the article xml.
  */
-
-
-
 object WikiNeighborExtractor {
   case class WikiNeighbors(outLinks:Seq[WikiLinkExtractor.Anchor], inlinks:Seq[String], contextLinks:Map[String,Int])
   case class NeighborCount(sourceWikiTitle:String, targetWikiTitle:String, canonicalDestName:String, anchors: Seq[WikiLinkExtractor.Anchor], inlinkCount:Int, contextCount:Int)
 
-  def passageNeighborCount(wikipediaTitle:String, documentName:String, documentText:String, documentTerms:Seq[String],documentMeta:Map[String,String], passageTextOpt:Option[String]):Seq[NeighborCount] = {
+  def documentNeighborCount(wikipediaTitle:String,  documentName:String, documentMeta:Map[String,String]):Seq[NeighborCount] = {
+    val WikiNeighbors(outAnchors, inlinks, contextLinks) = findNeighbors(wikipediaTitle, documentName, documentMeta)
+
+    val destinations = outAnchors.groupBy(_.destination)
+
+    val neighborWithCounts  =
+      for ((destination, anchors) <- destinations) yield {
+        val inlinkCount = if (inlinks.contains(destination)) {1} else {0}
+        val contextCount = contextLinks(destination)
+        val canonicalDestName = WikiTools.wikititleToEntityName(destination)
+        NeighborCount(wikipediaTitle, destination, canonicalDestName, anchors, inlinkCount, contextCount)
+      }
+
+    neighborWithCounts.toSeq
+  }
+
+
+  def passageNeighborCount(wikipediaTitle:String, documentName:String, documentText:String, documentMeta:Map[String,String], passageTextOpt:Option[String]):Seq[NeighborCount] = {
 
     val passageText = if(passageTextOpt.isDefined) passageTextOpt.get else documentText
 
-    val WikiNeighbors(outAnchors, inlinks, contextLinks) = findNeighbors(wikipediaTitle,documentName, documentText, documentTerms,documentMeta)
+    val WikiNeighbors(outAnchors, inlinks, contextLinks) = findNeighbors(wikipediaTitle,documentName, documentMeta)
 
     val passageLinks = outAnchors.filter(link => passageText.contains(link.rawAnchorText) || passageText.contains(link.anchorText))
 
@@ -30,14 +43,14 @@ object WikiNeighborExtractor {
       for ((destination, anchors) <- destinations) yield {
         val inlinkCount = if (inlinks.contains(destination)) {1} else {0}
         val contextCount = contextLinks(destination)
-        val canonicalDestName = wikititleToEntityName(destination)
+        val canonicalDestName = WikiTools.wikititleToEntityName(destination)
         NeighborCount(wikipediaTitle, destination, canonicalDestName, anchors, inlinkCount, contextCount)
       }
 
     neighborWithCounts.toSeq
   }
-  def findNeighbors(thisWikiTitle:String, documentName:String, documentText:String, documentTerms:Seq[String],documentMeta:Map[String,String]):WikiNeighbors = {
-    val outLinks = WikiLinkExtractor.simpleExtractorNoContext(documentName, documentText, documentTerms,documentMeta)
+  def findNeighbors(thisWikiTitle:String, documentName:String, documentMeta:Map[String,String]):WikiNeighbors = {
+    val outLinks = WikiLinkExtractor.simpleExtractorNoContext(documentName, documentMeta)
       .filterNot(anchor => (anchor.destination == thisWikiTitle) || ignoreWikiArticle(anchor.destination))
     val inLinks = srcInLinks(documentMeta)
     val contextLinks = contextLinkCoocurrences(documentMeta).toMap.withDefaultValue(0)
@@ -52,19 +65,15 @@ object WikiNeighborExtractor {
   }
 
 
-  def wikititleToEntityName(wikititle:String):String = {
-    StringTools.zapParentheses(wikititle.replaceAllLiterally("_"," "))
+  def srcInLinks(documentMeta:Map[String,String]):Seq[String] = {
+    documentMeta.getOrElse("srcInlinks", "").split(" ")
   }
 
-  def srcInLinks(galagoDocMeta:Map[String,String]):Seq[String] = {
-    galagoDocMeta.getOrElse("srcInlinks", "").split(" ")
-  }
-
-  def contextLinkCoocurrences(galagoDocMeta:Map[String,String]):Seq[(String, Int)] = {
-    for(line <- galagoDocMeta.getOrElse("contextLinks", "").split("\n")) yield {
+  def contextLinkCoocurrences(documentMeta:Map[String,String]):Seq[(String, Int)] = {
+    for(line <- documentMeta.getOrElse("contextLinks", "").split("\n")) yield {
       val title = StringTools.getSplitChunk(line, 0).get
       val countOpt = StringTools.toIntOption(StringTools.getSplitChunk(line, 1).getOrElse("0"))
-      (title -> countOpt.getOrElse(0))
+      title -> countOpt.getOrElse(0)
     }
   }
 

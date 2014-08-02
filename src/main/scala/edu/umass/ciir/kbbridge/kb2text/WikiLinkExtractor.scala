@@ -1,12 +1,11 @@
 package edu.umass.ciir.kbbridge.kb2text
 
-import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.xml.{Node, NodeSeq, XML}
 import scala.collection.JavaConversions._
 
 /**
- * Takes the input from the XML data and extractions the links from it.
+ * Parses wiki links from xml. Takes the input from the XML data and extractions the links from it.
  */
 object WikiLinkExtractor {
 
@@ -14,7 +13,7 @@ object WikiLinkExtractor {
 
 
 
-  def extractLinks(documentName:String, documentText:String, documentTerms:Seq[String],documentMeta:Map[String,String]): Seq[Anchor] = {
+  def extractLinks(documentName:String, documentMeta:Map[String,String]): Seq[Anchor] = {
 
     val meta = documentMeta;
     var body = meta.getOrElse("xml", "");
@@ -31,7 +30,7 @@ object WikiLinkExtractor {
           (bodyXML \\ "paragraph") ++ (bodyXML \\ "list")
         } catch {
           case e: org.xml.sax.SAXParseException =>
-            System.err.println("Article \"" + documentName + "\" has malformed XML in body:\n" + body, e.toString())
+            System.err.println("Article \"" + documentName + "\" has malformed XML in body:\n" + body, e.toString)
             NodeSeq.Empty
         }
       }
@@ -48,7 +47,7 @@ object WikiLinkExtractor {
     links.flatten.toSet.toSeq
   }
 
-  def simpleExtractorNoContext(documentName:String, documentText:String, documentTerms:Seq[String],documentMeta:Map[String,String]): Seq[Anchor] = {
+  def simpleExtractorNoContext(documentName:String, documentMeta:Map[String,String]): Seq[Anchor] = {
     val body = documentMeta.getOrElse("xml","")
     try {
       val bodyXML = XML.loadString(body.replace("\\n", "\n"))
@@ -56,7 +55,7 @@ object WikiLinkExtractor {
       val outAnchors = links.map(link => extractAnchorFromLink(documentName, link)).filter(a => a.source != a.destination && a.destination.length() > 0 && a.anchorText.length() > 0)
       outAnchors
     } catch {
-      case e: org.xml.sax.SAXParseException => extractLinks(documentName, documentText, documentTerms,documentMeta)
+      case e: org.xml.sax.SAXParseException => extractLinks(documentName, documentMeta)
     }
   }
 
@@ -117,7 +116,7 @@ object WikiLinkExtractor {
 class JWikiLinkExtractor {
   def extractLinkDestinations(documentName:String, documentMeta:java.util.Map[String,String]): java.util.List[String] = {
     val meta: Map[String, String] = scala.collection.JavaConversions.mapAsScalaMap(documentMeta).toMap
-    new java.util.ArrayList[String](WikiLinkExtractor.extractLinks(documentName, null, null, meta).map(_.destination))
+    new java.util.ArrayList[String](WikiLinkExtractor.extractLinks(documentName, meta).map(_.destination))
   }
 }
 
