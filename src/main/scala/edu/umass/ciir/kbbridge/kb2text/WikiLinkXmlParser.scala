@@ -7,7 +7,7 @@ import scala.collection.JavaConversions._
 /**
  * Parses wiki links from xml. Takes the input from the XML data and extractions the links from it.
  */
-object WikiLinkExtractor {
+object WikiLinkXmlParser {
 
   case class Anchor(source: String, destination: String, anchorText: String, paragraphId: Int, rawAnchorText: String);
 
@@ -113,10 +113,10 @@ object WikiLinkExtractor {
 
 }
 
-class JWikiLinkExtractor {
+class JWikiLinkXmlParser {
   def extractLinkDestinations(documentName:String, documentMeta:java.util.Map[String,String]): java.util.List[String] = {
     val meta: Map[String, String] = scala.collection.JavaConversions.mapAsScalaMap(documentMeta).toMap
-    new java.util.ArrayList[String](WikiLinkExtractor.extractLinks(documentName, meta).map(_.destination))
+    new java.util.ArrayList[String](WikiLinkXmlParser.extractLinks(documentName, meta).map(_.destination))
   }
 }
 

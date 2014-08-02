@@ -9,8 +9,8 @@ import scala.collection.JavaConversions._
  * the metadata field and outlinks by parsing the &lt;link&gt; fields of the article xml.
  */
 object WikiNeighborExtractor {
-  case class WikiNeighbors(outLinks:Seq[WikiLinkExtractor.Anchor], inlinks:Seq[String], contextLinks:Map[String,Int])
-  case class NeighborCount(sourceWikiTitle:String, targetWikiTitle:String, canonicalDestName:String, anchors: Seq[WikiLinkExtractor.Anchor], inlinkCount:Int, contextCount:Int)
+  case class WikiNeighbors(outLinks:Seq[WikiLinkXmlParser.Anchor], inlinks:Seq[String], contextLinks:Map[String,Int])
+  case class NeighborCount(sourceWikiTitle:String, targetWikiTitle:String, canonicalDestName:String, anchors: Seq[WikiLinkXmlParser.Anchor], inlinkCount:Int, contextCount:Int)
 
   def documentNeighborCount(wikipediaTitle:String,  documentName:String, documentMeta:Map[String,String]):Seq[NeighborCount] = {
     val WikiNeighbors(outAnchors, inlinks, contextLinks) = findNeighbors(wikipediaTitle, documentName, documentMeta)
@@ -50,7 +50,7 @@ object WikiNeighborExtractor {
     neighborWithCounts.toSeq
   }
   def findNeighbors(thisWikiTitle:String, documentName:String, documentMeta:Map[String,String]):WikiNeighbors = {
-    val outLinks = WikiLinkExtractor.simpleExtractorNoContext(documentName, documentMeta)
+    val outLinks = WikiLinkXmlParser.simpleExtractorNoContext(documentName, documentMeta)
       .filterNot(anchor => (anchor.destination == thisWikiTitle) || ignoreWikiArticle(anchor.destination))
     val inLinks = srcInLinks(documentMeta)
     val contextLinks = contextLinkCoocurrences(documentMeta).toMap.withDefaultValue(0)
