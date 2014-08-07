@@ -33,8 +33,7 @@ object FaccEntityContextExtractor {
         * We keep track of token-indexes (begin and end) that are annotated with entities in annotations2Idx
       */
 
-      println(" processing annotations in document "+documentName)
-      val (textSegments, annotations2Idx )= segmentTextWithAnnotations(faccAnnotations, text, tokenizeText)
+      val (textSegments, annotations2Idx )= segmentTextWithAnnotations(faccAnnotations, text, tokenizeText, documentName)
   
       /* In a second pass, we iterate over these annotated token-indexes, get tokens from half a window before and after
       * We unzip the  (Option[Token], Option[Annotation]) sequence to get a list of terms and neighbor annotations.
@@ -80,7 +79,7 @@ object FaccEntityContextExtractor {
     *
     */
   def segmentTextWithAnnotations(faccAnnotations: Seq[FreebaseEntityAnnotation],
-                                 text: String, tokenizeText: String => Seq[String])
+                                 text: String, tokenizeText: String => Seq[String], documentName:String="")
   : (Seq[(Option[String], Option[FreebaseEntityAnnotation])], Seq[(FreebaseEntityAnnotation, Int, Int)]) = {
 
     val textSegmentBuilder = new ListBuffer[(Option[String], Option[FreebaseEntityAnnotation])]()
@@ -91,11 +90,12 @@ object FaccEntityContextExtractor {
     for (ann <- faccAnnotations) {
       val idx = text.indexOf(ann.entityMention, currBeginIdx)
       if (idx == -1) {
-        println("\n\nText\n"+text+" \n\nannotation \n"+ann+"\n\n all annotations \n"+faccAnnotations)
+//        println("\n\nText\n"+text+" \n\nannotation \n"+ann+"\n\n all annotations \n"+faccAnnotations)
 
+          System.err.println(documentName+" Could not find entity Mention " + ann.entityMention + " in text after offset " + currBeginIdx+". Skipping...")
 
-        throw new RuntimeException(
-          "Could not find entity Mention " + ann.entityMention + " in text after offset " + currBeginIdx)
+//        throw new RuntimeException(
+//          "Could not find entity Mention " + ann.entityMention + " in text after offset " + currBeginIdx)
       }
 
       val prevText = text.substring(currBeginIdx, idx)
