@@ -96,20 +96,21 @@ object FaccEntityContextExtractor {
 
 //        throw new RuntimeException(
 //          "Could not find entity Mention " + ann.entityMention + " in text after offset " + currBeginIdx)
+      }  else {
+
+        val prevText = text.substring(currBeginIdx, idx)
+        textSegmentBuilder ++= tokenizeText(prevText).map(t => (Some(t), None))
+        val tokenBegin = textSegmentBuilder.length
+
+        // for multi-term mentions, annotations only get attached to the first term
+        textSegmentBuilder ++= tokenizeText(ann.entityMention).map(Some(_))
+          .zipAll(Seq(Some(ann)), None, None)
+
+        val tokenEnd = textSegmentBuilder.length
+        annotations2Idx += Tuple3(ann, tokenBegin, tokenEnd)
+
+        currBeginIdx = idx + ann.entityMention.length
       }
-
-      val prevText = text.substring(currBeginIdx, idx)
-      textSegmentBuilder ++= tokenizeText(prevText).map(t => (Some(t), None))
-      val tokenBegin = textSegmentBuilder.length
-
-      // for multi-term mentions, annotations only get attached to the first term
-      textSegmentBuilder ++= tokenizeText(ann.entityMention).map(Some(_))
-        .zipAll(Seq(Some(ann)), None, None)
-
-      val tokenEnd = textSegmentBuilder.length
-      annotations2Idx += Tuple3(ann, tokenBegin, tokenEnd)
-
-      currBeginIdx = idx + ann.entityMention.length
     }
 
     (textSegmentBuilder.toSeq, annotations2Idx.toSeq)
