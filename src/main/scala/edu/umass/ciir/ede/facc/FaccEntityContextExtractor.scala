@@ -90,6 +90,9 @@ object FaccEntityContextExtractor {
     for (ann <- faccAnnotations) {
       val idx = text.indexOf(ann.entityMention, currBeginIdx)
       if (idx == -1) {
+        println("\n\nText\n"+text+" \n\nannotation \n"+ann+"\n\n all annotations \n"+faccAnnotations)
+
+
         throw new RuntimeException(
           "Could not find entity Mention " + ann.entityMention + " in text after offset " + currBeginIdx)
       }
