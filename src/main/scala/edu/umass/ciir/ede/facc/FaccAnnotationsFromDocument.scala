@@ -21,7 +21,7 @@ object FaccAnnotationsFromDocument {
       case Some(ann) => {
         val lines = ann.split("\\n")
         val annotations = FreebaseAnnotationReader.annotationsFromStrings(lines.iterator).get(documentname).getOrElse(Seq())
-        annotations
+        annotations.sortBy(_.beginByteOffset)
       }
       case None => Seq.empty
     }
