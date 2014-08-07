@@ -32,7 +32,8 @@ object FaccEntityContextExtractor {
         * Option[Annotation]) in textSegmentBuilder
         * We keep track of token-indexes (begin and end) that are annotated with entities in annotations2Idx
       */
-  
+
+      println(" processing annotations in document "+documentName)
       val (textSegments, annotations2Idx )= segmentTextWithAnnotations(faccAnnotations, text, tokenizeText)
   
       /* In a second pass, we iterate over these annotated token-indexes, get tokens from half a window before and after
