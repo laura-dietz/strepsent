@@ -1,5 +1,10 @@
 package edu.umass.ciir.ede.facc
 
+import java.io.{Writer, StringWriter}
+
+import com.sun.org.apache.xml.internal.security.utils.I18n
+import org.htmlcleaner._
+
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ListBuffer
 
@@ -82,23 +87,34 @@ object FaccEntityContextExtractor {
                                  text: String, tokenizeText: String => Seq[String], documentName:String="")
   : (Seq[(Option[String], Option[FreebaseEntityAnnotation])], Seq[(FreebaseEntityAnnotation, Int, Int)]) = {
 
+    val textNoExtents =
+      text.toLowerCase.indexOf("<mentions>") match {
+        case -1 => text
+        case idx =>text.substring(0, idx)
+      }
+    val textClean = cleanHTML(textNoExtents)
+
+
+
     val textSegmentBuilder = new ListBuffer[(Option[String], Option[FreebaseEntityAnnotation])]()
     val annotations2Idx = new ListBuffer[(FreebaseEntityAnnotation, Int, Int)]
 
     var currBeginIdx = 0
 
+    val annotations2offset = new ListBuffer[(FreebaseEntityAnnotation, Int, Int)]
+
     for (ann <- faccAnnotations) {
-      val idx = text.indexOf(ann.entityMention, currBeginIdx)
+      val idx = textClean.indexOf(ann.entityMention, currBeginIdx)
       if (idx == -1) {
 //        println("\n\nText\n"+text+" \n\nannotation \n"+ann+"\n\n all annotations \n"+faccAnnotations)
 
-          System.err.println(documentName+" Could not find entity Mention " + ann.entityMention + " in text after offset " + currBeginIdx+". Skipping...")
+          System.err.println(getClass.getName+": "+ documentName+" Could not find entity Mention " + ann.entityMention + " in text after offset " + currBeginIdx+". Skipping...")
 
 //        throw new RuntimeException(
 //          "Could not find entity Mention " + ann.entityMention + " in text after offset " + currBeginIdx)
       }  else {
 
-        val prevText = text.substring(currBeginIdx, idx)
+        val prevText = textClean.substring(currBeginIdx, idx)
         textSegmentBuilder ++= tokenizeText(prevText).map(t => (Some(t), None))
         val tokenBegin = textSegmentBuilder.length
 
@@ -108,12 +124,73 @@ object FaccEntityContextExtractor {
 
         val tokenEnd = textSegmentBuilder.length
         annotations2Idx += Tuple3(ann, tokenBegin, tokenEnd)
+        annotations2offset += Tuple3(ann, idx, idx+ann.entityMention.length)
 
         currBeginIdx = idx + ann.entityMention.length
       }
     }
 
     (textSegmentBuilder.toSeq, annotations2Idx.toSeq)
+  }
+
+  val cleaner = {
+    val cleaner = new HtmlCleaner()
+    // take default cleaner properties
+    val props = cleaner.getProperties
+    //    props.setAdvancedXmlEscape(true)
+    //    props.setRecognizeUnicodeChars(true)
+    //    props.setTransResCharsToNCR(false)
+    //    props.setTranslateSpecialEntities(true)
+    props.setCharset("UTF-8")
+    props.setOmitComments(true)
+    props.setPruneTags("script,style,img")
+    props.setOmitHtmlEnvelope(true)
+    props.setOmitCdataOutsideScriptAndStyle(true)
+    props.setKeepWhitespaceAndCommentsInHead(false)
+    props.setOmitDoctypeDeclaration(true)
+    props.setOmitXmlDeclaration(true)
+
+    cleaner
+  }
+
+  def cleanHTML(text:String):String = {
+
+    val node = cleaner.clean(text)
+    val writer = new StringWriter()
+    new SimpleTextSerializer(cleaner.getProperties).write(node, writer, "UTF-8", true)
+
+    val out = writer.toString
+//    val outNoUtf8 = java.text.Normalizer.normalize(out, java.text.Normalizer.Form.NFKD).replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
+    val transliterate =
+      out.replaceAllLiterally(65533.toChar+"","'").replaceAllLiterally(8217.toChar+"","'").replaceAllLiterally("&apos;","'").replaceAllLiterally("U.S.","US")
+    transliterate.replaceAll("[\n\r]"," ").replaceAll("\\s+"," ")
+  }
+
+
+  /**
+   * <p>Simple HTML serializer - creates resulting HTML without indenting and/or compacting.</p>
+   */
+  class SimpleTextSerializer(props: CleanerProperties) extends HtmlSerializer(props) {
+
+    protected def serialize(tagNode: TagNode, writer: Writer) {
+      if (!isMinimizedTagSyntax(tagNode)) {
+        import scala.collection.JavaConversions._
+        for (item <- tagNode.getAllChildren) {
+          item match {
+            case _: ContentNode =>
+              val content: String = item.toString
+              writer.write(Utils.escapeXml(content,  props, false))
+//              writer.write(escapeText(content))
+            case _ => item match {
+              case token: BaseToken =>
+                token.serialize(this, writer)
+              case _ =>
+            }
+          }
+        }
+        writer.write(" ");
+      }
+    }
   }
 
 }
