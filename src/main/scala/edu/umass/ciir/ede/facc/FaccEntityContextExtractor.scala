@@ -137,10 +137,10 @@ object FaccEntityContextExtractor {
     val cleaner = new HtmlCleaner()
     // take default cleaner properties
     val props = cleaner.getProperties
-    //    props.setAdvancedXmlEscape(true)
+    props.setAdvancedXmlEscape(true)
     //    props.setRecognizeUnicodeChars(true)
     //    props.setTransResCharsToNCR(false)
-    //    props.setTranslateSpecialEntities(true)
+    props.setTranslateSpecialEntities(true)
     props.setCharset("UTF-8")
     props.setOmitComments(true)
     props.setPruneTags("script,style,img")
@@ -153,6 +153,10 @@ object FaccEntityContextExtractor {
     cleaner
   }
 
+  def main(args:Array[String]){
+    println( cleanHTML("(this is the case in California, Michigan, and Colorado to name a few). Other states allow patients to go directly to physical therapists. In most cases, if you are not making significant improvement within 30 days, the therapist will refer you to/back to your physician. Seeing a physical therapist first is safe and could save you hundreds of dollars. Click here for details Can my therapist provide me with a diagnosis? In most states, physical therapists cannot make a medical diagnosis. This is something that your medical doctor will provide for you. Physical therapists are important members of your medical team. At this point in time, physicians are typically the health care providers that will provide you with a medical diagnosis. How does the billing process work? Billing for physical therapy services is similar to what happens at your doctor&apos;s office. When you are seen for treatment, the following occurs: The physical therapist bills your insurance company, Workers&apos; Comp, or charges you based on Common Procedure Terminology (CPT) codes. Those codes are transferred to a billing form that is either mailed or electronically communicated to the payer. The payer processes this information and makes payments according to an agreed upon fee schedule. An Explanation of Benefits (EOB) is generated and sent to the patient and the physical therapy clinic with a check for payment and a balance due by the patient. The patient is expected to make the payment on the balance if any. It is important to understand that there are many small steps (beyond the outline provided above) within the process. Exceptions are common to the above example as well. At any time along the way, information may be missing, miscommunicated, or misunderstood. This can delay the payment process. While it is common for the payment process to be completed in 60 days or less, it is not uncommon for the physical therapy clinic to receive payment as long as six months after the treatment date. What will I have to do after physical therapy? Some patients will need to continue with home exercises. Some may choose to continue with a gym exercise program. Others will complete their rehabilitation and return to normal daily activities. It is important that you communicate your goals to your therapist, so he/she can develop a custom program for you. Is my therapist li") )
+  }
+
   def cleanHTML(text:String):String = {
 
     val node = cleaner.clean(text)
@@ -162,7 +166,17 @@ object FaccEntityContextExtractor {
     val out = writer.toString
 //    val outNoUtf8 = java.text.Normalizer.normalize(out, java.text.Normalizer.Form.NFKD).replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
     val transliterate =
-      out.replaceAllLiterally(65533.toChar+"","'").replaceAllLiterally(8217.toChar+"","'").replaceAllLiterally("&apos;","'").replaceAllLiterally("U.S.","US")
+      out.replaceAll("([A-Z])\\.([A-Z])\\.([A-Z])\\.([A-Z])\\.([A-Z])\\.","$1$2$3$4$5")
+        .replaceAll("([A-Z])\\.([A-Z])\\.([A-Z])\\.([A-Z])\\.","$1$2$3$4")
+        .replaceAll("([A-Z])\\.([A-Z])\\.([A-Z])\\.","$1$2$3")
+        .replaceAll("([A-Z])\\.([A-Z])\\.","$1$2")
+        .replaceAllLiterally(65533.toChar+"","'").replaceAllLiterally(8217.toChar+"","'")
+        .replaceAllLiterally("&apos;","'")
+        .replaceAllLiterally("&quot;","\"")
+        .replaceAllLiterally("&gt;",">")
+        .replaceAllLiterally("&lt;","<")
+        .replaceAllLiterally("&amp;","&")
+        //replaceAllLiterally("U.S.","US")
     transliterate.replaceAll("[\n\r]"," ").replaceAll("\\s+"," ")
   }
 
