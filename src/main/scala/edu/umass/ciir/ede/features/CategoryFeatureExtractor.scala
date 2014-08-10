@@ -91,7 +91,8 @@ object CategoryFeatureExtractor {
 
   def createCategoryTypeMap(documents: Seq[String], annotations: Map[String, AnnotatedDocument],
 //                            searcher: GalagoSearcher,
-                            nilThreshold: Double = 0.5): Map[String, (Set[String], Set[String])] = {
+                            nilThreshold: Double = 0.5)
+  : Map[String, (Set[String], Set[String])] = {
     val entities = for ((doc, idx) <- documents.zipWithIndex) yield {
       val docAnnotationOption = annotations.get(doc)
 
