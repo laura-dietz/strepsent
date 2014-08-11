@@ -1,6 +1,7 @@
 package edu.umass.ciir.ede.facc
 
 import java.io.{Writer, StringWriter}
+import java.util.concurrent.{ThreadPoolExecutor, ExecutorService, FutureTask}
 
 import com.sun.org.apache.xml.internal.security.utils.I18n
 import org.htmlcleaner._
@@ -90,47 +91,51 @@ object FaccEntityContextExtractor {
     val textNoExtents =
       text.toLowerCase.indexOf("<mentions>") match {
         case -1 => text
-        case idx =>text.substring(0, idx)
+        case idx => text.substring(0, idx)
       }
-    val textClean = cleanHTML(textNoExtents)
 
+    // HtmlCleaner has a tendency to go on vacations while parsing some hairy documents, particularly those produced by a certain company starting with M
+    if (textNoExtents.substring(500).contains("urn:schemas-microsoft-com:vml")) {
+      (Seq(), Seq())
+    } else {
+      val textClean = cleanHTML(textNoExtents)
 
+      val textSegmentBuilder = new ListBuffer[(Option[String], Option[FreebaseEntityAnnotation])]()
+      val annotations2Idx = new ListBuffer[(FreebaseEntityAnnotation, Int, Int)]
 
-    val textSegmentBuilder = new ListBuffer[(Option[String], Option[FreebaseEntityAnnotation])]()
-    val annotations2Idx = new ListBuffer[(FreebaseEntityAnnotation, Int, Int)]
+      var currBeginIdx = 0
 
-    var currBeginIdx = 0
+      val annotations2offset = new ListBuffer[(FreebaseEntityAnnotation, Int, Int)]
 
-    val annotations2offset = new ListBuffer[(FreebaseEntityAnnotation, Int, Int)]
+      for (ann <- faccAnnotations.take(500)) {
+        val idx = textClean.indexOf(ann.entityMention, currBeginIdx)
+        if (idx == -1) {
+          //        println("\n\nText\n"+text+" \n\nannotation \n"+ann+"\n\n all annotations \n"+faccAnnotations)
 
-    for (ann <- faccAnnotations.take(500)) {
-      val idx = textClean.indexOf(ann.entityMention, currBeginIdx)
-      if (idx == -1) {
-//        println("\n\nText\n"+text+" \n\nannotation \n"+ann+"\n\n all annotations \n"+faccAnnotations)
+          System.err.println(getClass.getName + ": " + documentName + " Could not find entity Mention " + ann.entityMention + " in text after offset " + currBeginIdx + ". Skipping...")
 
-          System.err.println(getClass.getName+": "+ documentName+" Could not find entity Mention " + ann.entityMention + " in text after offset " + currBeginIdx+". Skipping...")
+          //        throw new RuntimeException(
+          //          "Could not find entity Mention " + ann.entityMention + " in text after offset " + currBeginIdx)
+        } else {
 
-//        throw new RuntimeException(
-//          "Could not find entity Mention " + ann.entityMention + " in text after offset " + currBeginIdx)
-      }  else {
+          val prevText = textClean.substring(currBeginIdx, idx)
+          textSegmentBuilder ++= tokenizeText(prevText).map(t => (Some(t), None))
+          val tokenBegin = textSegmentBuilder.length
 
-        val prevText = textClean.substring(currBeginIdx, idx)
-        textSegmentBuilder ++= tokenizeText(prevText).map(t => (Some(t), None))
-        val tokenBegin = textSegmentBuilder.length
+          // for multi-term mentions, annotations only get attached to the first term
+          textSegmentBuilder ++= tokenizeText(ann.entityMention).map(Some(_))
+            .zipAll(Seq(Some(ann)), None, None)
 
-        // for multi-term mentions, annotations only get attached to the first term
-        textSegmentBuilder ++= tokenizeText(ann.entityMention).map(Some(_))
-          .zipAll(Seq(Some(ann)), None, None)
+          val tokenEnd = textSegmentBuilder.length
+          annotations2Idx += Tuple3(ann, tokenBegin, tokenEnd)
+          annotations2offset += Tuple3(ann, idx, idx + ann.entityMention.length)
 
-        val tokenEnd = textSegmentBuilder.length
-        annotations2Idx += Tuple3(ann, tokenBegin, tokenEnd)
-        annotations2offset += Tuple3(ann, idx, idx+ann.entityMention.length)
-
-        currBeginIdx = idx + ann.entityMention.length
+          currBeginIdx = idx + ann.entityMention.length
+        }
       }
+
+      (textSegmentBuilder.toSeq, annotations2Idx.toSeq)
     }
-
-    (textSegmentBuilder.toSeq, annotations2Idx.toSeq)
   }
 
   val cleaner = {
