@@ -98,7 +98,9 @@ object FaccEntityContextExtractor {
     if (textNoExtents.substring(0,500).contains("urn:schemas-microsoft-com:vml")) {
       (Seq(), Seq())
     } else {
-      val textClean = cleanHTML(textNoExtents)
+      val textgclean = tokenizeText(textNoExtents).mkString(" ")
+      val textClean = cleanHTML(textgclean)
+      //val textClean = cleanHTML(textNoExtents)
 
       val textSegmentBuilder = new ListBuffer[(Option[String], Option[FreebaseEntityAnnotation])]()
       val annotations2Idx = new ListBuffer[(FreebaseEntityAnnotation, Int, Int)]
@@ -106,13 +108,35 @@ object FaccEntityContextExtractor {
       var currBeginIdx = 0
 
       val annotations2offset = new ListBuffer[(FreebaseEntityAnnotation, Int, Int)]
-
+      val textCleanLower = textClean.toLowerCase
       for (ann <- faccAnnotations.take(500)) {
-        val idx = textClean.indexOf(ann.entityMention, currBeginIdx)
+        //val idxCap = textClean.indexOf(ann.entityMention, currBeginIdx)
+        val idx = textCleanLower.indexOf(tokenizeText(ann.entityMention.toLowerCase).mkString(" "), currBeginIdx)
+
         if (idx == -1) {
           //        println("\n\nText\n"+text+" \n\nannotation \n"+ann+"\n\n all annotations \n"+faccAnnotations)
 
           System.err.println(getClass.getName + ": " + documentName + " Could not find entity Mention " + ann.entityMention + " in text after offset " + currBeginIdx + ". Skipping...")
+
+       /*   val idx = textClean.indexOf(ann.entityMention, 0)
+          if (idx == -1) {
+            System.err.println(getClass.getName + ": " + documentName + " Could not find entity Mention " + ann.entityMention + " in text anywhere. Skipping...")
+
+          } else {
+            val prevText = textClean.substring(math.max(0,idx-50), idx)
+            textSegmentBuilder ++= tokenizeText(prevText).map(t => (Some(t), None))
+            val tokenBegin = textSegmentBuilder.length
+
+            // for multi-term mentions, annotations only get attached to the first term
+            textSegmentBuilder ++= tokenizeText(ann.entityMention).map(Some(_))
+              .zipAll(Seq(Some(ann)), None, None)
+
+            val tokenEnd = textSegmentBuilder.length
+            annotations2Idx += Tuple3(ann, tokenBegin, tokenEnd)
+            annotations2offset += Tuple3(ann, idx, idx + ann.entityMention.length)
+
+           // currBeginIdx = idx + ann.entityMention.length
+          }*/
 
           //        throw new RuntimeException(
           //          "Could not find entity Mention " + ann.entityMention + " in text after offset " + currBeginIdx)
@@ -163,11 +187,16 @@ object FaccEntityContextExtractor {
   }
 
   def cleanHTML(text:String):String = {
-
+   //val textBody= text.substring(text.toLowerCase.indexOf("<body>"))
+//   val oneline = text.replaceAll("[\n\r]"," ").replaceAll("\\s+"," ")
+//   val regexCleaned= oneline//.substring(text.toLowerCase.indexOf("<body>"))
+//      .replaceAll("<script.*</script>"," ")
+//      .replaceAll("<[a-zA-Z/].*>"," ")
+//      .replaceAll("<[a-zA-Z].*>"," ")
+ //   println(regexCleaned)
     val node = cleaner.clean(text)
     val writer = new StringWriter()
     new SimpleTextSerializer(cleaner.getProperties).write(node, writer, "UTF-8", true)
-
     val out = writer.toString
 //    val outNoUtf8 = java.text.Normalizer.normalize(out, java.text.Normalizer.Form.NFKD).replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
     val transliterate =
@@ -182,7 +211,7 @@ object FaccEntityContextExtractor {
         .replaceAllLiterally("&lt;","<")
         .replaceAllLiterally("&amp;","&")
         //replaceAllLiterally("U.S.","US")
-    transliterate.replaceAll("[\n\r]"," ").replaceAll("\\s+"," ")
+    transliterate
   }
 
 
