@@ -103,7 +103,7 @@ object FaccEntityContextExtractor {
 
     val annotations2offset = new ListBuffer[(FreebaseEntityAnnotation, Int, Int)]
 
-    for (ann <- faccAnnotations) {
+    for (ann <- faccAnnotations.take(500)) {
       val idx = textClean.indexOf(ann.entityMention, currBeginIdx)
       if (idx == -1) {
 //        println("\n\nText\n"+text+" \n\nannotation \n"+ann+"\n\n all annotations \n"+faccAnnotations)
