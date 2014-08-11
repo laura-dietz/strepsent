@@ -95,7 +95,7 @@ object FaccEntityContextExtractor {
       }
 
     // HtmlCleaner has a tendency to go on vacations while parsing some hairy documents, particularly those produced by a certain company starting with M
-    if (textNoExtents.substring(500).contains("urn:schemas-microsoft-com:vml")) {
+    if (textNoExtents.substring(0,500).contains("urn:schemas-microsoft-com:vml")) {
       (Seq(), Seq())
     } else {
       val textClean = cleanHTML(textNoExtents)
