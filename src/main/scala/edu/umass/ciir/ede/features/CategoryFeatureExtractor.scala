@@ -199,17 +199,17 @@ object CategoryFeatureExtractor {
       }
 
       if (wikipediaEntity.size > 0) {
-        val entityDoc = entityDocumentPuller(wikipediaEntity)
-        if (entityDoc != null) {
-          val categories = extractCategories(entityDoc._1, entityDoc._2)
-          val types = extractTypes(entityDoc._1, entityDoc._2)
-          id ->(categories, types)
-        } else {
-          println("unable to get categories for entity: " + wikipediaEntity)
-          id ->(Set[String](), Set[String]())
+        try{
+          val entityDoc = entityDocumentPuller(wikipediaEntity)
+            val categories = extractCategories(entityDoc._1, entityDoc._2)
+            val types = extractTypes(entityDoc._1, entityDoc._2)
+            id ->(categories, types)
+        } catch {
+          case ex : RuntimeException => {
+            println("unable to get categories for entity: " + wikipediaEntity)
+            id ->(Set[String](), Set[String]())
+          }
         }
-
-
       } else {
         id ->(Set[String](), Set[String]())
       }
