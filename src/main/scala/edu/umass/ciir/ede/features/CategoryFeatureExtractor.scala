@@ -200,13 +200,14 @@ object CategoryFeatureExtractor {
 
       if (wikipediaEntity.size > 0) {
         try{
-          val entityDoc = entityDocumentPuller(wikipediaEntity)
+          val entityDoc = entityDocumentPuller(wikipediaEntity.trim)
             val categories = extractCategories(entityDoc._1, entityDoc._2)
             val types = extractTypes(entityDoc._1, entityDoc._2)
             id ->(categories, types)
         } catch {
           case ex : RuntimeException => {
-            println("unable to get categories for entity: " + wikipediaEntity)
+            println("unable to get categories for entity: " + wikipediaEntity
+            + " because " + ex.getMessage)
             id ->(Set[String](), Set[String]())
           }
         }
