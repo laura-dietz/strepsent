@@ -4,6 +4,8 @@ import java.io.{Writer, StringWriter}
 import java.util.concurrent.{ThreadPoolExecutor, ExecutorService, FutureTask}
 
 
+import edu.umass.ciir.ede.elannotation.AnnotatedDocument
+
 import scala.collection.mutable.ListBuffer
 
 /**
@@ -19,10 +21,12 @@ object FaccEntityContextExtractor {
   def extractWindowContext(text:String, termWindowSize: Int
                            , metadata:Map[String, String]
                            , documentName:String
-                           , tokenizeText:(String) => Seq[String]): Seq[(FreebaseEntityAnnotation,  Seq[String], Seq[FreebaseEntityAnnotation])] = {
+                           , tokenizeText:(String) => Seq[String]
+                           , annotationMap:Map[String, AnnotatedDocument]): Seq[(FreebaseEntityAnnotation,  Seq[String], Seq[FreebaseEntityAnnotation])] = {
     val halfWindowSize = Math.rint(termWindowSize / 2).toInt
 
-    val faccAnnotations = FaccAnnotationsFromDocument.extractFaccAnnotations(metadata,documentName)
+//    val faccAnnotations = FaccAnnotationsFromDocument.extractFaccAnnotations(metadata,documentName)
+    val faccAnnotations = annotationMap(documentName).faccAnnotations.getOrElse(Seq())
 
       /* Splits the raw text according to surface forms of annotations (in order of annotations)
         * Uses TagTokenizer to tokenize (and filter) non-entity text segments

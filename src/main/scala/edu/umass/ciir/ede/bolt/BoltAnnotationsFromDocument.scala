@@ -1,5 +1,6 @@
 package edu.umass.ciir.ede.bolt
 
+
 import scala.xml.XML
 import edu.umass.ciir.ede.facc.{Freebase2WikipediaMap, FreebaseEntityAnnotation}
 import scala.collection.mutable.ListBuffer

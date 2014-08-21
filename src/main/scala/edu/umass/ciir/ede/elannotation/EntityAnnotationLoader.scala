@@ -1,5 +1,8 @@
 package edu.umass.ciir.ede.elannotation
 
+import edu.umass.ciir.ede.facc.FreebaseEntityAnnotation
+
+import scala.collection.mutable.ListBuffer
 import scala.xml.{Elem, NodeSeq, XML}
 import java.io.File
 import edu.umass.ciir.kbbridge.data.{EntityMention, ScoredWikipediaEntity, SimpleEntityMention}
@@ -17,7 +20,7 @@ case class Token(word:String, position:Int, posType:String, nerType:String, pars
 
 case class Mention(string:String, mentionType:String, charBegin:Int, charEnd:Int, tokenBegin:Int, tokenEnd:Int)
 
-case class AnnotatedDocument(tokens: IndexedSeq[Token], mentions:IndexedSeq[Mention], kbLinks: IndexedSeq[LinkedMention])
+case class AnnotatedDocument(tokens: IndexedSeq[Token], mentions:IndexedSeq[Mention], kbLinks: IndexedSeq[LinkedMention], faccAnnotations : Option[Seq[FreebaseEntityAnnotation]])
 
 object EntityAnnotationLoader {
 
@@ -32,7 +35,7 @@ object EntityAnnotationLoader {
     val links = xmlToKbLinks(docId, xml, candidateLimit).toIndexedSeq
     val tokens = xmlToTokens(xml).toIndexedSeq
     val mentions = xmlToMentions(xml).toIndexedSeq
-    AnnotatedDocument(tokens, mentions, links)
+    AnnotatedDocument(tokens, mentions, links, None)
   }
 
   def xmlToKbLinks(docId:String, xmlDoc : Elem, candidateLimit:Int = 300) = {

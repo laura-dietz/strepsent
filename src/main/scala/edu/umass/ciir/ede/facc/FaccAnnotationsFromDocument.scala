@@ -1,5 +1,6 @@
 package edu.umass.ciir.ede.facc
 
+
 import scala.xml.XML
 
 /**
@@ -35,5 +36,7 @@ object FaccAnnotationsFromDocument {
   def hasFaccAnnotation(metadata:Map[String,String]):Boolean = {
     metadata.get("raw-annotations") != null
   }
+
+
 
 }
