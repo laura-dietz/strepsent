@@ -5,7 +5,7 @@
 //import edu.umass.ciir.ede.EdeConfig
 //import scala.collection.mutable.{ListBuffer, HashMap}
 //import edu.umass.ciir.galago.GalagoSearcher
-//import org.lemurproject.galago.tupleflow.Parameters
+//import org.lemurproject.galago.utility.Parameters
 //import scala.collection.JavaConversions._
 //import edu.umass.ciir.kbbridge.util.SeqTools
 //import edu.umass.ciir.ede.features.DocumentScoringUtilities
