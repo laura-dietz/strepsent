@@ -6,7 +6,7 @@ import edu.umass.ciir.strepsi.distribution.Distribution
 /**
  * Created by jdalton on 12/17/13.
  */
-package object ede {
+package object strepsent {
 
   type WikiTitle = String
   type Mention = String
@@ -14,5 +14,7 @@ package object ede {
   type StochasticEntityLink = (Distribution[WikiTitle], Mention)
   type EntityLink = (WikiTitle, Mention)
   type DocumentName = String
+
+
 
 }
