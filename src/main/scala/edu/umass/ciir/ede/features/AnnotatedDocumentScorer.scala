@@ -1,5 +1,7 @@
 package edu.umass.ciir.ede.features
 
+import edu.umass.ciir.strepsent.{EntityId, Category, FreeBaseType}
+
 import scala.collection.JavaConversions._
 import edu.umass.ciir.ede.elannotation.AnnotatedDocument
 import edu.umass.ciir.strepsi.{ScoredDocument}
@@ -49,30 +51,24 @@ class AnnotatedDocumentScorer(wikipediaCategoryCountsPath:String, wikipediaTypeC
   }
 
 
-  def scoreDocumentCategoriesIdentifiers(queryIdentifiers: Seq[(String, Double)], annotations : Map[String, AnnotatedDocument],
+  def scoreDocumentWCategoriesIdentifiers(queryIdentifiers: Seq[(Category, Double)], annotations : Map[String, AnnotatedDocument],
                                          workingSet: Set[String], nilThreshold: Double = 0.5,
-                                         typeMap: Map[String, (Set[String], Set[String])],
-                                          typesOrCategories:String, mu:Int=100) : Seq[ScoredDocument] = {
+                                         typeMap: Map[EntityId, (Set[Category], Set[FreeBaseType])],
+                                         mu:Int=100) : Seq[ScoredDocument] = {
 
 
-    val bgScore = if (typesOrCategories equals "types") {
-      computeBgScore(queryIdentifiers, typeCollFreq, typeCounts, mu)
-    } else {
-      computeBgScore(queryIdentifiers, categoryCollFreq, categoryCounts, mu)
-    }
+    val bgScore =
+      computeBgScore[Category](queryIdentifiers, categoryCollFreq, categoryCounts, mu)
 
     val scoredDocs = for (doc <- workingSet) yield {
 
       val annotationOption = annotations.get(doc)
       val score = annotationOption match {
         case Some(ann) => {
-          val (categories, types) = CategoryFeatureExtractor.extractCategoriesAndTypes(ann, 0.5, typeMap)
+          val categories= CategoryFeatureExtractor.extractCategoriesAndTypes(ann, 0.5, typeMap)._1
 
-          val qlScore =  if (typesOrCategories equals "types") {
-            scoreQl(queryIdentifiers, types, mu, typeCollFreq, typeCounts)
-          } else {
-            scoreQl(queryIdentifiers, categories, mu, categoryCollFreq, categoryCounts)
-          }
+          val qlScore =
+            scoreQl[Category](queryIdentifiers, categories, mu, categoryCollFreq, categoryCounts)
           qlScore
         }
         case None => bgScore
@@ -90,8 +86,43 @@ class AnnotatedDocumentScorer(wikipediaCategoryCountsPath:String, wikipediaTypeC
   }
 
 
+  def scoreDocumentFreeBaseTypeIdentifiers(queryIdentifiers: Seq[(FreeBaseType, Double)], annotations : Map[String, AnnotatedDocument],
+                                         workingSet: Set[String], nilThreshold: Double = 0.5,
+                                         typeMap: Map[EntityId, (Set[Category], Set[FreeBaseType])],
+                                         mu:Int=100) : Seq[ScoredDocument] = {
 
-  def computeBgScore(queryIdentifiers: Seq[(String, Double)], collLength: Long, collectionCountMap: (String) =>
+
+    val bgScore =
+      computeBgScore[FreeBaseType](queryIdentifiers, typeCollFreq, typeCounts, mu)
+
+    val scoredDocs = for (doc <- workingSet) yield {
+
+      val annotationOption = annotations.get(doc)
+      val score = annotationOption match {
+        case Some(ann) => {
+          val types = CategoryFeatureExtractor.extractCategoriesAndTypes(ann, 0.5, typeMap)._2
+
+          val qlScore =
+            scoreQl[FreeBaseType](queryIdentifiers, types, mu, typeCollFreq, typeCounts)
+          qlScore
+        }
+        case None => bgScore
+      }
+      new ScoredDocument(doc, -1, score)
+    }
+    val reranked = scoredDocs.toSeq.sortBy(d => -d.score)
+    val rerankedWithNewRank =
+    for ((result, idx) <- reranked.zipWithIndex) yield {
+      result.withNewRank(idx + 1)
+      //println(result.rank + " " + result.documentName + " " + result.score)
+
+    }
+    rerankedWithNewRank.toSeq
+  }
+
+
+
+  def computeBgScore[T](queryIdentifiers: Seq[(T, Double)], collLength: Long, collectionCountMap: (T) =>
                     (Long, Long), mu:Int=1500) : Double = {
 
     val termScores = for ((q, weight) <- queryIdentifiers) yield {
@@ -113,11 +144,11 @@ class AnnotatedDocumentScorer(wikipediaCategoryCountsPath:String, wikipediaTypeC
       val termScore = weight * prob
       termScore
     }
-    return termScores.sum
+    termScores.sum
   }
 
-  def scoreQl(queryIdentifiers: Seq[(String, Double)], parsedTokens:Seq[String], mu:Int=1500, collLength:Long,
-              collectionCountMap: (String) => (Long, Long)) : Double = {
+  def scoreQl[T<:String](queryIdentifiers: Seq[(T, Double)], parsedTokens:Seq[String], mu:Int=1500, collLength:Long,
+              collectionCountMap: (T) => (Long, Long)) : Double = {
 
     val fieldLm = new LanguageModel(1)
     fieldLm.addDocument(parsedTokens, false)
@@ -146,7 +177,7 @@ class AnnotatedDocumentScorer(wikipediaCategoryCountsPath:String, wikipediaTypeC
       val termScore = weight * prob
       termScore
     }
-    return termScores.sum
+    termScores.sum
 
   }
 

@@ -15,6 +15,10 @@ package object strepsent {
   type EntityLink = (WikiTitle, Mention)
   type DocumentName = String
 
-
+  type EntityId = String
+  type Category = String
+  type FreeBaseType = String
+  type FeatureName = String
+  type Term = String
 
 }

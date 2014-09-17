@@ -1,19 +1,19 @@
 package edu.umass.ciir.ede.features
 
-import edu.umass.ciir.ede.elannotation.{EntityAnnotationLoader, AnnotatedDocument}
+import edu.umass.ciir.ede.elannotation.AnnotatedDocument
+import edu.umass.ciir.ede.facc.Freebase2WikipediaMap
+import edu.umass.ciir.strepsent._
+import edu.umass.ciir.strepsi.galagocompat.GalagoTag
+
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ListBuffer
-import java.io.File
-import edu.umass.ciir.ede.facc.Freebase2WikipediaMap
-import edu.umass.ciir.strepsi.{LogTools, ScoredDocument}
-import edu.umass.ciir.strepsi.galagocompat.GalagoTag
 
 /**
 * Created by jdalton on 1/23/14.
 */
 object CategoryFeatureExtractor {
 
-  val stopTypes = Set("/business/employer",
+  val stopTypes:Set[FreeBaseType] = Set("/business/employer",
     "/organization/organization",
     "/location/location",
     "/base/ontologies/ontology_instance",
@@ -92,7 +92,7 @@ object CategoryFeatureExtractor {
   def createCategoryTypeMap(documents: Seq[String], annotations: Map[String, AnnotatedDocument],
 //                            searcher: GalagoSearcher,
                             nilThreshold: Double = 0.5)
-  : Map[String, (Set[String], Set[String])] = {
+  : Map[EntityId, (Set[Category], Set[FreeBaseType])]= {
     val entities = for ((doc, idx) <- documents.zipWithIndex) yield {
       val docAnnotationOption = annotations.get(doc)
 
@@ -112,8 +112,15 @@ object CategoryFeatureExtractor {
   }
 
 
-
-  def extractCategoriesAndTypes(annotations: AnnotatedDocument, nilthreshold: Double = 0.5, typesAndCategories: Map[String, (Set[String], Set[String])]): (Seq[String], Seq[String]) = {
+  /**
+   * Returns the union of categories and types across all entity links in the annotated document
+   * @param annotations
+   * @param nilthreshold
+   * @param typesAndCategories
+   * @return
+   */
+  def extractCategoriesAndTypes(annotations: AnnotatedDocument, nilthreshold: Double = 0.5, typesAndCategories: Map[EntityId, (Set[Category], Set[FreeBaseType])]): (Seq[Category], Seq[FreeBaseType]) = {
+    // todo why return a set and not a distribution?
     val nonNilEntities = annotations.kbLinks.map(_.entityLinks take 1).flatten.filter(_.score > nilthreshold)
     val entityIds = nonNilEntities.map(_.wikipediaTitle)
 
@@ -126,7 +133,7 @@ object CategoryFeatureExtractor {
     (categories, typeTerms)
   }
 
-  def pullCategoriesForEntitiesFromDisk(entitySet: Set[String]): Map[String, (Set[String], Set[String])] = {
+  def pullCategoriesForEntitiesFromDisk(entitySet: Set[EntityId]): Map[EntityId, (Set[Category], Set[FreeBaseType])] = {
 
     println("Extracting categories for entities: " + entitySet.size)
 
@@ -165,24 +172,24 @@ object CategoryFeatureExtractor {
 
     val fbTypeMap = fbTypes.toMap.withDefaultValue(Set[String]())
 
-    val types = for ((id, idx) <- entitySet.toSeq.zipWithIndex) yield {
-      val wikipediaEntity = if (id.startsWith("/m")) {
+    val types = for ((entityId, idx) <- entitySet.toSeq.zipWithIndex) yield {
+      val wikipediaEntity = if (entityId.startsWith("/m")) {
         // we have a facc annotation entity; map this to a wikipedia entity.
-        Freebase2WikipediaMap.freebaseId2WikiTitleMap(id)
+        Freebase2WikipediaMap.freebaseId2WikiTitleMap(entityId) // todo use disk-back-map instead to save RAM
       } else {
-        id
+        entityId
       }
       val categories = categoryMap(wikipediaEntity)
       val types = fbTypeMap(wikipediaEntity)
-      id ->(categories, types)
+      entityId ->(categories, types)
     }
 
     val entityToTypeMap = types.toMap
     entityToTypeMap
   }
 
-  def pullCategoriesForEntities(entityDocumentPuller:(String) => (Seq[String], Seq[GalagoTag]),
-                                entitySet: Set[String]): Map[String, (Set[String], Set[String])] = {
+  def pullCategoriesForEntities(entityDocumentPuller:(DocumentName) => (Seq[String], Seq[GalagoTag]),
+                                entitySet: Set[EntityId]): Map[EntityId, (Set[Category], Set[FreeBaseType])] = {
 
     println("Extracting categories for entities: " + entitySet.size)
 
@@ -200,7 +207,7 @@ object CategoryFeatureExtractor {
 
       if (wikipediaEntity.size > 0) {
         try{
-          val entityDoc = entityDocumentPuller(wikipediaEntity.trim)
+          val entityDoc = entityDocumentPuller(wikipediaEntity.trim.asInstanceOf[DocumentName])
             val categories = extractCategories(entityDoc._1, entityDoc._2)
             val types = extractTypes(entityDoc._1, entityDoc._2)
             id ->(categories, types)
@@ -230,33 +237,33 @@ object CategoryFeatureExtractor {
   //  (categories, typeTerms)
   //}
 
-  def extractCategories(terms:Seq[String], fields:Seq[GalagoTag]): Set[String] = {
+  def extractCategories(terms:Seq[Category], fields:Seq[GalagoTag]): Set[Category] = {
 
     val fieldsToCount = Set("category")
 
-    val tokenMap = scala.collection.mutable.HashMap[String, ListBuffer[String]]()
+    val tokenMap = scala.collection.mutable.HashMap[String, ListBuffer[Category]]()
     for (field <- fields) {
       if (fieldsToCount contains field.name) {
-        tokenMap.getOrElseUpdate(field.name, ListBuffer[String]()) ++= terms.subList(field.begin, field.end)
+        tokenMap.getOrElseUpdate(field.name, ListBuffer[Category]()) ++= terms.subList(field.begin, field.end)
 
       }
     }
-    val categories = tokenMap.getOrElse("category", ListBuffer[String]())
+    val categories = tokenMap.getOrElse("category", ListBuffer[Category]())
     categories.toSet
   }
 
-  def extractTypes(terms:Seq[String], fields:Seq[GalagoTag]): Set[String] = {
+  def extractTypes(terms:Seq[FreeBaseType], fields:Seq[GalagoTag]): Set[FreeBaseType] = {
 
     val fieldsToCount = Set("fbtype")
 
-    val tokenMap = scala.collection.mutable.HashMap[String, ListBuffer[String]]()
+    val tokenMap = scala.collection.mutable.HashMap[String, ListBuffer[FreeBaseType]]()
     for (field <- fields) {
       if (fieldsToCount contains field.name) {
-        tokenMap.getOrElseUpdate(field.name, ListBuffer[String]()) ++= terms.subList(field.begin, field.end)
+        tokenMap.getOrElseUpdate(field.name, ListBuffer[FreeBaseType]()) ++= terms.subList(field.begin, field.end)
 
       }
     }
-    val types = tokenMap.getOrElse("fbtype", ListBuffer[String]())
+    val types = tokenMap.getOrElse("fbtype", ListBuffer[FreeBaseType]())
     types.toSet
   }
 
