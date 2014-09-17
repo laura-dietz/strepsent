@@ -53,7 +53,7 @@ class AnnotatedDocumentScorer(wikipediaCategoryCountsPath:String, wikipediaTypeC
 
   def scoreDocumentWCategoriesIdentifiers(queryIdentifiers: Seq[(Category, Double)], annotations : Map[String, AnnotatedDocument],
                                          workingSet: Set[String], nilThreshold: Double = 0.5,
-                                         typeMap: Map[EntityId, (Set[Category], Set[FreeBaseType])],
+                                         typeMap: Map[EntityId, (Seq[Category], Seq[FreeBaseType])],
                                          mu:Int=100) : Seq[ScoredDocument] = {
 
 
@@ -88,7 +88,7 @@ class AnnotatedDocumentScorer(wikipediaCategoryCountsPath:String, wikipediaTypeC
 
   def scoreDocumentFreeBaseTypeIdentifiers(queryIdentifiers: Seq[(FreeBaseType, Double)], annotations : Map[String, AnnotatedDocument],
                                          workingSet: Set[String], nilThreshold: Double = 0.5,
-                                         typeMap: Map[EntityId, (Set[Category], Set[FreeBaseType])],
+                                         typeMap: Map[EntityId, (Seq[Category], Seq[FreeBaseType])],
                                          mu:Int=100) : Seq[ScoredDocument] = {
 
 

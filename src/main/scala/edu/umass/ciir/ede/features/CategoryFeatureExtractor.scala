@@ -92,7 +92,7 @@ object CategoryFeatureExtractor {
   def createCategoryTypeMap(documents: Seq[String], annotations: Map[String, AnnotatedDocument],
 //                            searcher: GalagoSearcher,
                             nilThreshold: Double = 0.5)
-  : Map[EntityId, (Set[Category], Set[FreeBaseType])]= {
+  : Map[EntityId, (Seq[Category], Seq[FreeBaseType])]= {
     val entities = for ((doc, idx) <- documents.zipWithIndex) yield {
       val docAnnotationOption = annotations.get(doc)
 
@@ -119,7 +119,7 @@ object CategoryFeatureExtractor {
    * @param typesAndCategories
    * @return
    */
-  def extractCategoriesAndTypes(annotations: AnnotatedDocument, nilthreshold: Double = 0.5, typesAndCategories: Map[EntityId, (Set[Category], Set[FreeBaseType])]): (Seq[Category], Seq[FreeBaseType]) = {
+  def extractCategoriesAndTypes(annotations: AnnotatedDocument, nilthreshold: Double = 0.5, typesAndCategories: Map[EntityId, (Seq[Category], Seq[FreeBaseType])]): (Seq[Category], Seq[FreeBaseType]) = {
     // todo why return a set and not a distribution?
     val nonNilEntities = annotations.kbLinks.map(_.entityLinks take 1).flatten.filter(_.score > nilthreshold)
     val entityIds = nonNilEntities.map(_.wikipediaTitle)
@@ -128,12 +128,12 @@ object CategoryFeatureExtractor {
       typesAndCategories(entity)
     }
 
-    val categories = entitiesWithTypes.map(_._1).flatten
-    val typeTerms = entitiesWithTypes.map(_._2).flatten
+    val categories = entitiesWithTypes.map(_._1).flatten.distinct
+    val typeTerms = entitiesWithTypes.map(_._2).flatten.distinct
     (categories, typeTerms)
   }
 
-  def pullCategoriesForEntitiesFromDisk(entitySet: Set[EntityId]): Map[EntityId, (Set[Category], Set[FreeBaseType])] = {
+  def pullCategoriesForEntitiesFromDisk(entitySet: Set[EntityId]): Map[EntityId, (Seq[Category], Seq[FreeBaseType])] = {
 
     println("Extracting categories for entities: " + entitySet.size)
 
@@ -153,11 +153,11 @@ object CategoryFeatureExtractor {
     val lines = source.getLines()
     val categories = for (l <- lines if (titleSet.contains(l.split("\t")(0)))) yield {
       val fields = l.split("\t")
-      val title = fields(0)
-      val categories = fields.drop(1).toSet
+      val title:EntityId = fields(0)
+      val categories = fields.drop(1).distinct.asInstanceOf[Seq[Category]]
       title -> categories
     }
-    val categoryMap = categories.toMap.withDefaultValue(Set[String]())
+    val categoryMap = categories.toMap.withDefaultValue(Seq[Category]())
 
     println("Reading type map.")
     val fbTypeFile = "./data/stats/wikipedia-title2fbtypes"
@@ -165,12 +165,11 @@ object CategoryFeatureExtractor {
     val typeLines = typeSource.getLines()
     val fbTypes = for (t <- typeLines if (titleSet.contains(t.split("\t")(0)))) yield {
       val fields = t.split("\t")
-      val title = fields(0)
-      val t1 = fields.drop(1).toSet
+      val title:EntityId = fields(0)
+      val t1 = fields.drop(1).distinct.asInstanceOf[Seq[FreeBaseType]]
       title -> t1
     }
-
-    val fbTypeMap = fbTypes.toMap.withDefaultValue(Set[String]())
+    val fbTypeMap = fbTypes.toMap.withDefaultValue(Seq[FreeBaseType]())
 
     val types = for ((entityId, idx) <- entitySet.toSeq.zipWithIndex) yield {
       val wikipediaEntity = if (entityId.startsWith("/m")) {
@@ -184,12 +183,12 @@ object CategoryFeatureExtractor {
       entityId ->(categories, types)
     }
 
-    val entityToTypeMap = types.toMap
+    val entityToTypeMap = types.toMap[EntityId, (Seq[Category],Seq[FreeBaseType])]
     entityToTypeMap
   }
 
   def pullCategoriesForEntities(entityDocumentPuller:(DocumentName) => (Seq[String], Seq[GalagoTag]),
-                                entitySet: Set[EntityId]): Map[EntityId, (Set[Category], Set[FreeBaseType])] = {
+                                entitySet: Set[EntityId]): Map[EntityId, (Seq[Category], Seq[FreeBaseType])] = {
 
     println("Extracting categories for entities: " + entitySet.size)
 
@@ -215,11 +214,11 @@ object CategoryFeatureExtractor {
           case ex : RuntimeException => {
             println("unable to get categories for entity: " + wikipediaEntity
             + " because " + ex.getMessage)
-            id ->(Set[String](), Set[String]())
+            id ->(Seq[Category](), Seq[FreeBaseType]())
           }
         }
       } else {
-        id ->(Set[String](), Set[String]())
+        id ->(Seq[Category](), Seq[FreeBaseType]())
       }
     }
 
@@ -237,7 +236,7 @@ object CategoryFeatureExtractor {
   //  (categories, typeTerms)
   //}
 
-  def extractCategories(terms:Seq[Category], fields:Seq[GalagoTag]): Set[Category] = {
+  def extractCategories(terms:Seq[Category], fields:Seq[GalagoTag]): Seq[Category] = {
 
     val fieldsToCount = Set("category")
 
@@ -249,10 +248,10 @@ object CategoryFeatureExtractor {
       }
     }
     val categories = tokenMap.getOrElse("category", ListBuffer[Category]())
-    categories.toSet
+    categories.distinct
   }
 
-  def extractTypes(terms:Seq[FreeBaseType], fields:Seq[GalagoTag]): Set[FreeBaseType] = {
+  def extractTypes(terms:Seq[FreeBaseType], fields:Seq[GalagoTag]): Seq[FreeBaseType] = {
 
     val fieldsToCount = Set("fbtype")
 
@@ -264,7 +263,7 @@ object CategoryFeatureExtractor {
       }
     }
     val types = tokenMap.getOrElse("fbtype", ListBuffer[FreeBaseType]())
-    types.toSet
+    types.distinct
   }
 
 //  def main(args: Array[String]) {
