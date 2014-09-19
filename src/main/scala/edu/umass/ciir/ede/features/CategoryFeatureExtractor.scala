@@ -154,7 +154,8 @@ object CategoryFeatureExtractor {
     val categories = for (l <- lines if (titleSet.contains(l.split("\t")(0)))) yield {
       val fields = l.split("\t")
       val title:EntityId = fields(0)
-      val categories = fields.drop(1).distinct.asInstanceOf[Seq[Category]]
+
+      val categories = fields.drop(1).distinct.toSeq
       title -> categories
     }
     val categoryMap = categories.toMap.withDefaultValue(Seq[Category]())
@@ -166,7 +167,7 @@ object CategoryFeatureExtractor {
     val fbTypes = for (t <- typeLines if (titleSet.contains(t.split("\t")(0)))) yield {
       val fields = t.split("\t")
       val title:EntityId = fields(0)
-      val t1 = fields.drop(1).distinct.asInstanceOf[Seq[FreeBaseType]]
+      val t1 = fields.drop(1).distinct.toSeq
       title -> t1
     }
     val fbTypeMap = fbTypes.toMap.withDefaultValue(Seq[FreeBaseType]())
