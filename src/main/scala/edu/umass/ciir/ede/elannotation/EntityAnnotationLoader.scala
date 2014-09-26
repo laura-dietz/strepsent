@@ -1,11 +1,10 @@
 package edu.umass.ciir.ede.elannotation
 
-import edu.umass.ciir.ede.facc.FreebaseEntityAnnotation
-
-import scala.collection.mutable.ListBuffer
-import scala.xml.{Elem, NodeSeq, XML}
 import java.io.File
-import edu.umass.ciir.kbbridge.data.{EntityMention, ScoredWikipediaEntity, SimpleEntityMention}
+
+import edu.umass.ciir.kbbridge.data.{ScoredWikipediaEntity, SimpleEntityMention}
+
+import scala.xml.{Elem, XML}
 
 /**
  * Created with IntelliJ IDEA.
@@ -14,13 +13,6 @@ import edu.umass.ciir.kbbridge.data.{EntityMention, ScoredWikipediaEntity, Simpl
  * Time: 3:49 PM
  */
 
-case class LinkedMention(mention: EntityMention, entityLinks: Seq[ScoredWikipediaEntity], charBegin:Int, charEnd:Int, tokenBegin:Int, tokenEnd:Int)
-
-case class Token(word:String, position:Int, posType:String, nerType:String, parse:String, charBegin:Int, charEnd:Int, isStartOfSentence:Boolean)
-
-case class Mention(string:String, mentionType:String, charBegin:Int, charEnd:Int, tokenBegin:Int, tokenEnd:Int)
-
-case class AnnotatedDocument(tokens: IndexedSeq[Token], mentions:IndexedSeq[Mention], kbLinks: IndexedSeq[LinkedMention], faccAnnotations : Option[Seq[FreebaseEntityAnnotation]])
 
 object EntityAnnotationLoader {
 
@@ -71,7 +63,7 @@ object EntityAnnotationLoader {
       val parse =  (t \ "PARSE").text.trim
       val sentenceStart = (t \ "StartSentence").text.trim.toBoolean
 
-      val token = Token(word, id, pos, ner, parse, charBegin, charEnd, sentenceStart )
+      val token = NlpToken(word, id, pos, ner, parse, charBegin, charEnd, sentenceStart )
       // println(linkedMention)
       token
     }
