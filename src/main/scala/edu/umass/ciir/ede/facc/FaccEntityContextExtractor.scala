@@ -112,7 +112,7 @@ object FaccEntityContextExtractor {
     println("nameDict = "+nameDict)
     println("nameMatches = "+nameMatches)
 
-    for (m <- nonOverlapping) {
+    for (m <- nonOverlapping; if faccByNameId(m.nameId).nonEmpty) {
 
       val prevText = text.substring(currBeginIdx, m.lower)
       textSegmentBuilder ++= tokenizeText(prevText).map(t => (Some(t), None))
