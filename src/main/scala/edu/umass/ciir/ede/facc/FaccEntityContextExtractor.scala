@@ -109,8 +109,8 @@ object FaccEntityContextExtractor {
     val nameMatches = nametagger.tag(text).sortBy(_.lower)
     val nonOverlapping = FastNameTagger.removeOverlappingMatches(nameMatches)
 
-    println("nameDict = "+nameDict)
-    println("nameMatches = "+nameMatches)
+//    println("nameDict = "+nameDict)
+//    println("nameMatches = "+nameMatches)
 
     for (m <- nonOverlapping; if faccByNameId(m.nameId).nonEmpty) {
 
@@ -129,8 +129,9 @@ object FaccEntityContextExtractor {
 
       currBeginIdx = m.upper
     }
-    println("textSegmentBuilder = "+ textSegmentBuilder)
+//    println("textSegmentBuilder = "+ textSegmentBuilder)
 
+    nametagger.close()
     tempFile.delete()
     (textSegmentBuilder.toSeq, annotations2Idx.toSeq)
   }
