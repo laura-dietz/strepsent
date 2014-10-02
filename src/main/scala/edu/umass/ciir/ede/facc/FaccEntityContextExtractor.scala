@@ -1,9 +1,5 @@
 package edu.umass.ciir.ede.facc
 
-import java.io.{Writer, StringWriter}
-import java.util.concurrent.{ThreadPoolExecutor, ExecutorService, FutureTask}
-
-
 import edu.umass.ciir.ede.elannotation.AnnotatedDocument
 
 import scala.collection.mutable.ListBuffer
@@ -107,9 +103,11 @@ object FaccEntityContextExtractor {
       var currBeginIdx = 0
 
       val annotations2offset = new ListBuffer[(FreebaseEntityAnnotation, Int, Int)]
+
+    // todo replace with name-tagger!
+    // todo snip!
       val textCleanLower = text.toLowerCase
       for (ann <- faccAnnotations.take(500)) {
-        //val idxCap = textClean.indexOf(ann.entityMention, currBeginIdx)
         val idx = textCleanLower.indexOf(tokenizeText(ann.entityMention.toLowerCase).mkString(" "), currBeginIdx)
 
         if (idx == -1) {
@@ -118,9 +116,9 @@ object FaccEntityContextExtractor {
           System.err.println(getClass.getName + ": " + documentName + " Could not find entity Mention " + ann.entityMention + " in text after offset " + currBeginIdx + ". Skipping...")
 
 
-          //        throw new RuntimeException(
-          //          "Could not find entity Mention " + ann.entityMention + " in text after offset " + currBeginIdx)
         } else {
+
+      // todo snap!
 
           val prevText = text.substring(currBeginIdx, idx)
           textSegmentBuilder ++= tokenizeText(prevText).map(t => (Some(t), None))
