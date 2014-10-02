@@ -11,7 +11,7 @@ import scala.collection.mutable.ListBuffer
  * Extracts term and neighbor context of FreebaseEntityAnnotations.
  */
 object FaccEntityContextExtractor {
-  val DEBUG = true // todo switch DEBUG off
+  val DEBUG = false // todo switch DEBUG off
 
   /*
    * Like ContextExtractor in elannotation package
@@ -178,8 +178,6 @@ object FaccEntityContextExtractor {
 
     val annotations2offset = new ListBuffer[(FreebaseEntityAnnotation, Int, Int)]
 
-    // todo replace with name-tagger!
-    // todo snip!
     val textCleanLower = text.toLowerCase
     for (ann <- faccAnnotations.take(500)) {
       val idx = textCleanLower.indexOf(tokenizeText(ann.entityMention.toLowerCase).mkString(" "), currBeginIdx)
@@ -191,8 +189,6 @@ object FaccEntityContextExtractor {
 
 
       } else {
-
-        // todo snap!
 
         val prevText = text.substring(currBeginIdx, idx)
         textSegmentBuilder ++= tokenizeText(prevText).map(t => (Some(t), None))
