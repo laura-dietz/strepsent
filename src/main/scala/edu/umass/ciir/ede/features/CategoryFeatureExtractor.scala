@@ -200,8 +200,10 @@ object CategoryFeatureExtractor {
 
       val wikipediaEntity = if (id.startsWith("/m")) {
         // we have a facc annotation entity; map this to a wikipedia entity.
+        println("getWIkititle from titlemap "+id+" -> "+Freebase2WikipediaMap.freebaseId2WikiTitleMap(id))
         Freebase2WikipediaMap.freebaseId2WikiTitleMap(id)
       } else {
+        println("was already wiki title")
         id
       }
 
