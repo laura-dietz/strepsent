@@ -21,4 +21,7 @@ package object strepsent {
   type FeatureName = String
   type Term = String
 
+  type WikiEntityId = EntityId
+  type FreebaseEntityId = EntityId
+
 }

@@ -1,16 +1,18 @@
 package edu.umass.ciir.ede.facc
 
-import scala.collection.mutable.HashMap
-import collection.mutable
-import java.util.regex.Pattern
 import java.io.PrintWriter
+import java.util.regex.Pattern
+
+import edu.umass.ciir.strepsent.{FreebaseEntityId, WikiEntityId}
+
+import scala.collection.mutable
 
 /**
  *Maps Freebase Ids to WikipediaTitles
  */
 object Freebase2WikipediaMap {
 
-  val (freebaseId2WikiTitleMap, wikiTitle2freebaseIdMap) = {
+  val (freebaseId2WikiTitleMap:Map[FreebaseEntityId, WikiEntityId], wikiTitle2freebaseIdMap:Map[WikiEntityId, FreebaseEntityId]) = {
     println("Loading freebase title map.")
 
     val f = io.Source.fromFile("./data/freebase-wiki-titles-new-clean")

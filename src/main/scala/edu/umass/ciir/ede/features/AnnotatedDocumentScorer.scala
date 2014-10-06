@@ -20,9 +20,9 @@ class AnnotatedDocumentScorer(wikipediaCategoryCountsPath:String, wikipediaTypeC
 //  val (typeCollFreq, typeCounts) = TermCountsMap.loadMap(EdeConfig.wikipediaTypeCounts)
 
 
-  def scoreDocumentQlIdentifiers(queryIdentifiers: Seq[(String, Double)], annotations : Map[String, AnnotatedDocument],
+  def scoreDocumentQlIdentifiers[EntityId<:String](queryIdentifiers: Seq[(EntityId, Double)], annotations : Map[String, AnnotatedDocument],
                                  workingSet: Set[String], nilThreshold: Double = 0.5,
-                                 collectionIdCount:Long, entityIdCounts: (String) => (Long,
+                                 collectionIdCount:Long, entityIdCounts: (EntityId) => (Long,
     Long)) : Seq[ScoredDocument] = {
 
     val bgScore = computeBgScore(queryIdentifiers, collectionIdCount,entityIdCounts)
