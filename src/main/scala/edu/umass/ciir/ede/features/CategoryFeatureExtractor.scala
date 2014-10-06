@@ -1,7 +1,6 @@
 package edu.umass.ciir.ede.features
 
 import edu.umass.ciir.ede.elannotation.AnnotatedDocument
-import edu.umass.ciir.ede.facc.Freebase2WikipediaMap
 import edu.umass.ciir.strepsent._
 import edu.umass.ciir.strepsi.galagocompat.GalagoTag
 
@@ -11,7 +10,7 @@ import scala.collection.mutable.ListBuffer
 /**
 * Created by jdalton on 1/23/14.
 */
-object CategoryFeatureExtractor {
+class CategoryFeatureExtractor(val freebaseId2WikiTitleMap:Map[String, String]) {
 
   val stopTypes:Set[FreeBaseType] = Set("/business/employer",
     "/organization/organization",
@@ -140,7 +139,7 @@ object CategoryFeatureExtractor {
     val wikipediaTitleSet = entitySet.map(id => {
       if (id.startsWith("/m")) {
         // we have a facc annotation entity; map this to a wikipedia entity.
-        Freebase2WikipediaMap.freebaseId2WikiTitleMap(id)
+        freebaseId2WikiTitleMap(id)
       } else {
         id
       }
@@ -175,7 +174,7 @@ object CategoryFeatureExtractor {
     val types = for ((entityId, idx) <- entitySet.toSeq.zipWithIndex) yield {
       val wikipediaEntity = if (entityId.startsWith("/m")) {
         // we have a facc annotation entity; map this to a wikipedia entity.
-        Freebase2WikipediaMap.freebaseId2WikiTitleMap(entityId) // todo use disk-back-map instead to save RAM
+        freebaseId2WikiTitleMap(entityId) // todo use disk-back-map instead to save RAM
       } else {
         entityId
       }
@@ -200,8 +199,8 @@ object CategoryFeatureExtractor {
 
       val wikipediaEntity = if (id.startsWith("/m")) {
         // we have a facc annotation entity; map this to a wikipedia entity.
-        println("getWIkititle from titlemap "+id+" -> "+Freebase2WikipediaMap.freebaseId2WikiTitleMap(id))
-        Freebase2WikipediaMap.freebaseId2WikiTitleMap(id)
+        println("getWIkititle from titlemap "+id+" -> "+freebaseId2WikiTitleMap(id))
+        freebaseId2WikiTitleMap(id)
       } else {
         println("was already wiki title")
         id

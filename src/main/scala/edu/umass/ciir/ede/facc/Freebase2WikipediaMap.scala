@@ -9,10 +9,16 @@ import scala.collection.mutable
 
 /**
  *Maps Freebase Ids to WikipediaTitles
+ * @deprecated
  */
 object Freebase2WikipediaMap {
 
-  val (freebaseId2WikiTitleMap:Map[FreebaseEntityId, WikiEntityId], wikiTitle2freebaseIdMap:Map[WikiEntityId, FreebaseEntityId]) = {
+  val freebaseId2WikiTitleMap:Map[FreebaseEntityId, WikiEntityId] = {
+    loadF2WMapsFromText()
+  }
+  val wikiTitle2freebaseIdMap:Map[WikiEntityId, FreebaseEntityId] = loadW2FMapsFromText()
+
+  def loadF2WMapsFromText():Map[FreebaseEntityId, WikiEntityId] = {
     println("Loading freebase title map.")
 
     val f = io.Source.fromFile("./data/freebase-wiki-titles-new-clean")
@@ -26,12 +32,50 @@ object Freebase2WikipediaMap {
     f.close()
 
     val fb2Wiki = freebaseId2WikiTitle.result().withDefault(freebaseId => "")
-    val wiki2Fb = freebaseId2WikiTitle.result().map(pair => pair._2 -> pair._1).withDefault(wikiId => "")
     println("Done.")
-    (fb2Wiki, wiki2Fb)
+    fb2Wiki.toMap
   }
 
-  lazy val wikipediaTitleNormalization = freebaseId2WikiTitleMap.map(entry => (entry._2.toLowerCase, entry._2))
+   def loadW2FMapsFromText(): Map[WikiEntityId, FreebaseEntityId] = {
+    println("Loading freebase title map.")
+
+    val f = io.Source.fromFile("./data/freebase-wiki-titles-new-clean")
+    val wikiTitle2FreebaseId = new mutable.HashMap[String,  String]()
+    for(line <- f.getLines()) {
+      val sp = line.split("\t")
+      val freebaseId = sp(0)
+      val wikipediaTitle = sp(1)
+      wikiTitle2FreebaseId += (wikipediaTitle -> freebaseId)
+    }
+    f.close()
+
+    val wiki2Fb = wikiTitle2FreebaseId.result().withDefault(freebaseId => "")
+    println("Done.")
+    wiki2Fb.toMap
+  }
+
+
+
+  /** @deprecated */
+  lazy val wikipediaTitleNormalization = loadF2WMapsFromText().map(entry => (entry._2.toLowerCase, entry._2))
+
+  def getFreebaseId2WikiTitleMap():mutable.HashMap[String,String] = {
+    println("Loading freebase title map.")
+
+    val f = io.Source.fromFile("./data/freebase-wiki-titles-new-clean")
+    val freebaseId2WikiTitle = new mutable.HashMap[String,  String]()
+    for(line <- f.getLines(); if line.contains("\t")) {
+      val sp = line.split("\t")
+      val freebaseId = sp(0)
+      val wikipediaTitle = sp(1)
+      freebaseId2WikiTitle += (freebaseId -> wikipediaTitle)
+    }
+//    f.close()
+
+    val fb2Wiki = freebaseId2WikiTitle//.result()//.withDefault(freebaseId => "")
+    println("Done.")
+    fb2Wiki
+  }
 
 
 }

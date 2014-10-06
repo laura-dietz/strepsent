@@ -1,18 +1,18 @@
 package edu.umass.ciir.ede.features
 
-import edu.umass.ciir.strepsent.{EntityId, Category, FreeBaseType}
-
-import scala.collection.JavaConversions._
 import edu.umass.ciir.ede.elannotation.AnnotatedDocument
-import edu.umass.ciir.strepsi.{ScoredDocument}
+import edu.umass.ciir.strepsent.{Category, EntityId, FreeBaseType}
+import edu.umass.ciir.strepsi.ScoredDocument
 import edu.umass.ciir.strepsi.ciirshared.LanguageModel
 import edu.umass.ciir.strepsi.termcounts.TermCollectionCountsMap
+
+import scala.collection.JavaConversions._
 
 
 /**
  * Created by jdalton on 1/22/14.
  */
-class AnnotatedDocumentScorer(wikipediaCategoryCountsPath:String, wikipediaTypeCountsPath:String) {
+class AnnotatedDocumentScorer(wikipediaCategoryCountsPath:String, wikipediaTypeCountsPath:String, categoryFeatureExtractor:CategoryFeatureExtractor) {
 
   val (categoryCollFreq, categoryCounts) = TermCollectionCountsMap.loadMap(wikipediaCategoryCountsPath)
   val (typeCollFreq, typeCounts) = TermCollectionCountsMap.loadMap(wikipediaTypeCountsPath)
@@ -65,7 +65,7 @@ class AnnotatedDocumentScorer(wikipediaCategoryCountsPath:String, wikipediaTypeC
       val annotationOption = annotations.get(doc)
       val score = annotationOption match {
         case Some(ann) => {
-          val categories= CategoryFeatureExtractor.extractCategoriesAndTypes(ann, 0.5, typeMap)._1
+          val categories= categoryFeatureExtractor.extractCategoriesAndTypes(ann, 0.5, typeMap)._1
 
           val qlScore =
             scoreQl[Category](queryIdentifiers, categories, mu, categoryCollFreq, categoryCounts)
@@ -100,7 +100,7 @@ class AnnotatedDocumentScorer(wikipediaCategoryCountsPath:String, wikipediaTypeC
       val annotationOption = annotations.get(doc)
       val score = annotationOption match {
         case Some(ann) => {
-          val types = CategoryFeatureExtractor.extractCategoriesAndTypes(ann, 0.5, typeMap)._2
+          val types = categoryFeatureExtractor.extractCategoriesAndTypes(ann, 0.5, typeMap)._2
 
           val qlScore =
             scoreQl[FreeBaseType](queryIdentifiers, types, mu, typeCollFreq, typeCounts)

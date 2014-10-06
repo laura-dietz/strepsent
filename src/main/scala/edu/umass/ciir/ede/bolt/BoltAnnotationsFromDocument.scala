@@ -1,16 +1,17 @@
 package edu.umass.ciir.ede.bolt
 
 
-import scala.xml.XML
 import edu.umass.ciir.ede.facc.{Freebase2WikipediaMap, FreebaseEntityAnnotation}
-import scala.collection.mutable.ListBuffer
-import edu.umass.ciir.ede.facc.FreebaseEntityAnnotation
+import edu.umass.ciir.strepsent.{FreebaseEntityId, WikiEntityId}
+
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
+import scala.xml.XML
 
 /**
  * Read post-level entity annotations from IBM-annotated Bolt threats
  */
-class BoltAnnotationsFromDocument(tacId2WikiTitleMap:Map[String,String]) {
+class BoltAnnotationsFromDocument(tacId2WikiTitleMap:Map[String,WikiEntityId]) {
 
   //  def extractKbLinks(document: Document, boltDoc:String) = {
   //
@@ -84,7 +85,7 @@ class BoltAnnotationsFromDocument(tacId2WikiTitleMap:Map[String,String]) {
         // ignore entities with lookup failure
         wikititleOpt match {
           case Some(wikititle) =>  {
-            val freebaseIdOpt = Freebase2WikipediaMap.wikiTitle2freebaseIdMap.get(wikititle)
+            val freebaseIdOpt:Option[FreebaseEntityId] = Freebase2WikipediaMap.wikiTitle2freebaseIdMap.get(wikititle)
             freebaseIdOpt match {
               case Some(freebaseId) => {
                 val entityScore = attr(entity, "@score").toDouble

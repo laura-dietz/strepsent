@@ -1,5 +1,7 @@
 package edu.umass.ciir.ede.facc
 
+import edu.umass.ciir.strepsent.{WikiEntityId, FreebaseEntityId}
+
 /**
  * Created with IntelliJ IDEA.
  * User: jdalton
@@ -16,9 +18,9 @@ case class FreebaseEntityAnnotation(documentName:String,
                                     endByteOffset:Int,
                                     mentionContextPosterior:Double,
                                     contextOnlyPosterior:Double,
-                                    freebaseId:String) {
+                                    freebaseId:FreebaseEntityId) {
 
-  def wikipediaTitle = Freebase2WikipediaMap.freebaseId2WikiTitleMap(freebaseId)
+  def wikipediaTitle:WikiEntityId = Freebase2WikipediaMap.freebaseId2WikiTitleMap(freebaseId)
 
 }
 
@@ -27,7 +29,7 @@ case class FreebaseEntityQueryAnnotation(topicId:Int,
                                     entityMention:String,
                                     beginByteOffset:Int,
                                     endByteOffset:Int,
-                                    freebaseId:String,
+                                    freebaseId:FreebaseEntityId,
                                     posterior:Double) {
-  def wikipediaTitle = Freebase2WikipediaMap.freebaseId2WikiTitleMap(freebaseId)
+  def wikipediaTitle:WikiEntityId = Freebase2WikipediaMap.freebaseId2WikiTitleMap(freebaseId)
 }
