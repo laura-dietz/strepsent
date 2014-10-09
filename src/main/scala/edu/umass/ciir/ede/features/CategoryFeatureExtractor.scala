@@ -139,11 +139,12 @@ class CategoryFeatureExtractor(val freebaseId2WikiTitleMap:Map[String, String]) 
     val wikipediaTitleSet = entitySet.map(id => {
       if (id.startsWith("/m")) {
         // we have a facc annotation entity; map this to a wikipedia entity.
-        freebaseId2WikiTitleMap(id)
+        freebaseId2WikiTitleMap.get(id)
       } else {
-        id
+        Some(id)
       }
-    })
+    }).flatten
+
     val titleSet = wikipediaTitleSet.toSet
 
     println("Reading category map. For title set size: " + titleSet.size)
@@ -174,13 +175,18 @@ class CategoryFeatureExtractor(val freebaseId2WikiTitleMap:Map[String, String]) 
     val types = for ((entityId, idx) <- entitySet.toSeq.zipWithIndex) yield {
       val wikipediaEntity = if (entityId.startsWith("/m")) {
         // we have a facc annotation entity; map this to a wikipedia entity.
-        freebaseId2WikiTitleMap(entityId) // todo use disk-back-map instead to save RAM
+        freebaseId2WikiTitleMap.get(entityId) // todo use disk-back-map instead to save RAM
       } else {
-        entityId
+        Some(entityId)
       }
-      val categories = categoryMap(wikipediaEntity)
-      val types = fbTypeMap(wikipediaEntity)
-      entityId ->(categories, types)
+      wikipediaEntity match {
+        case Some(wikipediaEntity) => {
+          val categories = categoryMap(wikipediaEntity)
+          val types = fbTypeMap(wikipediaEntity)
+          entityId ->(categories, types)
+        }
+        case None => entityId ->(Seq.empty, Seq.empty)
+      }
     }
 
     val entityToTypeMap = types.toMap[EntityId, (Seq[Category],Seq[FreeBaseType])]
@@ -199,22 +205,22 @@ class CategoryFeatureExtractor(val freebaseId2WikiTitleMap:Map[String, String]) 
 
       val wikipediaEntity = if (id.startsWith("/m")) {
         // we have a facc annotation entity; map this to a wikipedia entity.
-        println("getWIkititle from titlemap "+id+" -> "+freebaseId2WikiTitleMap(id))
-        freebaseId2WikiTitleMap(id)
+        println("getWikititle from titlemap "+id+" -> "+freebaseId2WikiTitleMap.get(id))
+        freebaseId2WikiTitleMap.get(id)
       } else {
         println("was already wiki title")
-        id
+        Some(id)
       }
 
-      if (wikipediaEntity.size > 0) {
+      if (wikipediaEntity.isDefined) {
         try{
-          val entityDoc = entityDocumentPuller(wikipediaEntity.trim.asInstanceOf[DocumentName])
+          val entityDoc = entityDocumentPuller(wikipediaEntity.get.trim.asInstanceOf[DocumentName])
             val categories = extractCategories(entityDoc._1, entityDoc._2)
             val types = extractTypes(entityDoc._1, entityDoc._2)
             id ->(categories, types)
         } catch {
           case ex : RuntimeException => {
-            println("unable to get categories for entity: " + wikipediaEntity
+            println("unable to get categories for entity: " + wikipediaEntity.get
             + " because " + ex.getMessage)
             id ->(Seq[Category](), Seq[FreeBaseType]())
           }
