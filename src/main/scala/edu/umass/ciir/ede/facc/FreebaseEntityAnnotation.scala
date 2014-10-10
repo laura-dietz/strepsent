@@ -20,7 +20,7 @@ case class FreebaseEntityAnnotation(documentName:String,
                                     contextOnlyPosterior:Double,
                                     freebaseId:FreebaseEntityId) {
 
-  def wikipediaTitle:WikiEntityId = Freebase2WikipediaMap.freebaseId2WikiTitleMap(freebaseId)
+  def wikipediaTitle:WikiEntityId = Freebase2WikipediaMap.freebaseId2WikiTitleMap.getOrElse(freebaseId,"")
 
 }
 
@@ -31,5 +31,5 @@ case class FreebaseEntityQueryAnnotation(topicId:Int,
                                     endByteOffset:Int,
                                     freebaseId:FreebaseEntityId,
                                     posterior:Double) {
-  def wikipediaTitle:WikiEntityId = Freebase2WikipediaMap.freebaseId2WikiTitleMap(freebaseId)
+  def wikipediaTitle:WikiEntityId = Freebase2WikipediaMap.freebaseId2WikiTitleMap.getOrElse(freebaseId,"")
 }
