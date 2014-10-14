@@ -1,5 +1,7 @@
 package edu.umass.ciir.ede.elannotation
 
+import scala.collection.mutable
+
 /**
  * User: dietz
  * Date: 9/20/14
@@ -17,6 +19,14 @@ object PlainTokenConverter {
     }
 
     def peekWord() = word.toString
+  }
+
+
+
+  def tokenized(text: Seq[String], charBegins:mutable.Buffer[Int],  charEnds:mutable.Buffer[Int], isStop: (String) => Boolean = (_) => false): Seq[Token] = {
+    for((term,idx) <- text.zipWithIndex) yield {
+      PlainToken(term, idx, charBegins(idx), charEnds(idx), term.head.isUpper)
+    }
   }
 
   def tokenizeFullText(text: String, isStop: (String) => Boolean = (_) => false): Seq[Token] = {
