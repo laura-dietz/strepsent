@@ -14,7 +14,7 @@ import edu.umass.ciir.strepsi.trec.Judgment
 package object elannotation {
 
   type QueryId = String
-  type EntityId = String
+  type ElEntityId = String
   type QueryJudgmentSet = Map[QueryId, Seq[Judgment]]
 
   type WikiTitle = String
