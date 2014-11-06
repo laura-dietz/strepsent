@@ -1,17 +1,14 @@
 package edu.umass.ciir.ede.facc
 
 import edu.umass.ciir.ede.elannotation.AnnotatedDocument
-import edu.umass.ciir.strepsi.SeqTools
-import edu.umass.ciir.strepsitag.FastNameTagger
 
-import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 /**
  * Extracts term and neighbor context of FreebaseEntityAnnotations.
  */
 object FaccEntityContextExtractor {
-  val DEBUG = false // todo switch DEBUG off
+  val DEBUG = false
 
   /*
    * Like ContextExtractor in elannotation package
@@ -65,79 +62,7 @@ object FaccEntityContextExtractor {
   }
 
 
-  /** uses name-tagger to split the raw text according to surface forms of annotations (in order of annotations)
-    * Uses TagTokenizer to tokenize (and filter) non-entity text segments
-    * Uses TagTokenizer to tokenize mention and attach annotation to the token (for multi-token annotations,
-    * we only attach it to the first token
-    *
-    * This way we build a token-by-token sequence with elements (Option[Token],
-    * Option[Annotation]) in textSegmentBuilder
-    * We keep track of token-indexes (begin and end) that are annotated with entities in annotations2Idx
-    *
-    * @param faccAnnotations sequence of annotations, in order which they appear in the text
-    * @param text            clean text
-    * @return a pair of a)
-    *         Sequence over tokens, for every token a pair of Option[Term],
-    *         Option[Annotation]
-    *         b) a list of token ids (for a) where annotations occur.
-    *
-    */
-  def segmentTextWithAnnotations(faccAnnotations: Seq[FreebaseEntityAnnotation],
-                                 text: String, tokenizeText: String => Seq[String], documentName:String="")
-  : (Seq[(Option[String], Option[FreebaseEntityAnnotation])], Seq[(FreebaseEntityAnnotation, Int, Int)]) = {
-
-    val textSegmentBuilder = new ListBuffer[(Option[String], Option[FreebaseEntityAnnotation])]()
-    val annotations2Idx = new ListBuffer[(FreebaseEntityAnnotation, Int, Int)]
-    val annotations2offset = new ListBuffer[(FreebaseEntityAnnotation, Int, Int)]
-
-    var currBeginIdx = 0
-
-
-    def normalizeName(name:String):String = {
-      name.replaceAll("\\s+", "").replaceAll("[^a-zA-Z0-9]", "")
-    }
-
-
-    val faccByNormalizedNames = faccAnnotations.map(x => normalizeName(x.entityMention) -> x)
-    val faccByNameId = SeqTools.mapValues[String, Iterable[FreebaseEntityAnnotation], mutable.Buffer[FreebaseEntityAnnotation]](
-      SeqTools.groupByKey(faccByNormalizedNames.sortBy(_._2.beginByteOffset)),
-      _.toBuffer)
-
-    val nameDict = faccByNormalizedNames.map(x => x._2.entityMention -> x._1)
-    val tempFile = FastNameTagger.createTmpDictionary(nameDict, "faccAnnotations")
-    val nametagger = new FastNameTagger(tempFile, true, true)
-    val nameMatches = nametagger.tag(text).sortBy(_.lower)
-    val nonOverlapping = FastNameTagger.removeOverlappingMatches(nameMatches)
-
-//    println("nameDict = "+nameDict)
-//    println("nameMatches = "+nameMatches)
-
-    for (m <- nonOverlapping; if faccByNameId(m.nameId).nonEmpty) {
-
-      val prevText = text.substring(currBeginIdx, m.lower)
-      textSegmentBuilder ++= tokenizeText(prevText).map(t => (Some(t), None))
-      val tokenBegin = textSegmentBuilder.length
-
-      val ann = faccByNameId(m.nameId).remove(0)
-      // for multi-term mentions, annotations only get attached to the first term
-      textSegmentBuilder ++= tokenizeText(m.mention).map(Some(_))
-        .zipAll(Seq(Some(ann)), None, None)
-
-      val tokenEnd = textSegmentBuilder.length
-      annotations2Idx += Tuple3(ann, tokenBegin, tokenEnd)
-      annotations2offset += Tuple3(ann, m.lower, m.upper)
-
-      currBeginIdx = m.upper
-    }
-//    println("textSegmentBuilder = "+ textSegmentBuilder)
-
-    nametagger.close()
-    tempFile.delete()
-    (textSegmentBuilder.toSeq, annotations2Idx.toSeq)
-  }
-
-
-  /** Old version that uses iterative substring finding - Splits the raw text according to surface forms of annotations (in order of annotations)
+  /** Splits the raw text according to surface forms of annotations (in order of annotations)
     * Uses TagTokenizer to tokenize (and filter) non-entity text segments
     * Uses TagTokenizer to tokenize mention and attach annotation to the token (for multi-token annotations,
     * we only attach it to the first token
@@ -154,8 +79,8 @@ object FaccEntityContextExtractor {
     *         b) a list of token ids (for a) where annotations occur.
     *
     */
-  def segmentTextWithAnnotationsOld(faccAnnotations: Seq[FreebaseEntityAnnotation],
-                                    text: String, tokenizeText: String => Seq[String], documentName:String="")
+  def segmentTextWithAnnotations(faccAnnotations: Seq[FreebaseEntityAnnotation],
+                                 text: String, tokenizeText: String => Seq[String], documentName:String="")
   : (Seq[(Option[String], Option[FreebaseEntityAnnotation])], Seq[(FreebaseEntityAnnotation, Int, Int)]) = {
     //
     //    val textNoExtents =
@@ -179,6 +104,8 @@ object FaccEntityContextExtractor {
 
     val annotations2offset = new ListBuffer[(FreebaseEntityAnnotation, Int, Int)]
 
+    // todo replace with name-tagger!
+    // todo snip!
     val textCleanLower = text.toLowerCase
     for (ann <- faccAnnotations.take(500)) {
       val idx = textCleanLower.indexOf(tokenizeText(ann.entityMention.toLowerCase).mkString(" "), currBeginIdx)
@@ -190,6 +117,8 @@ object FaccEntityContextExtractor {
 
 
       } else {
+
+        // todo snap!
 
         val prevText = text.substring(currBeginIdx, idx)
         textSegmentBuilder ++= tokenizeText(prevText).map(t => (Some(t), None))
